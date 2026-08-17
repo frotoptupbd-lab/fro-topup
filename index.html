@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FRO TopUp BD</title>
+  
+  <!-- React & Babel CDN Links -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const SITE_NAME = "FRO TopUp BD";
+    const DEFAULT_ADMIN_PIN = "264891";
+
+    const DEFAULT_SETTINGS = {
+      bkash: "01994835545",
+      nagad: "01994835545",
+      whatsapp: "01994835545",
+      telegram: "@frotopupbd",
+      notice: "⚡ দ্রুত ও নিরাপদ FRO TopUp BD",
+    };
+
+    const INITIAL_PACKAGES = [
+      { id: 1, name: "Weekly Lite", price: 48, category: "weeklyLite", active: true },
+      { id: 2, name: "2× Weekly Lite", price: 96, category: "weeklyLite", active: true },
+      { id: 3, name: "5× Weekly Lite", price: 240, category: "weeklyLite", active: true },
+      { id: 4, name: "10× Weekly Lite", price: 480, category: "weeklyLite", active: true },
+      { id: 5, name: "20× Weekly Lite", price: 960, category: "weeklyLite", active: true },
+      { id: 6, name: "Weekly Membership", price: 165, category: "weekly", active: true },
+      { id: 7, name: "Monthly Membership", price: 810, category: "monthly", active: true },
+      { id: 8, name: "25 Diamonds", price: 26, category: "uid", active: true },
+      { id: 9, name: "50 Diamonds", price: 39, category: "uid", active: true },
+      { id: 10, name: "115 Diamonds", price: 95, category: "uid", active: true },
+      { id: 11, name: "240 Diamonds", price: 169, category: "uid", active: true },
+      { id: 12, name: "355 Diamonds", price: 249, category: "uid", active: true },
+      { id: 13, name: "505 Diamonds", price: 345, category: "uid", active: true },
+      { id: 14, name: "610 Diamonds", price: 410, category: "uid", active: true },
+      { id: 15, name: "850 Diamonds", price: 565, category: "uid", active: true },
+      { id: 16, name: "1090 Diamonds", price: 780, category: "uid", active: true },
+      { id: 17, name: "1240 Diamonds", price: 850, category: "uid", active: true },
+      { id: 18, name: "1850 Diamonds", price: 1165, category: "uid", active: true },
+      { id: 19, name: "2530 Diamonds", price: 1620, category: "uid", active: true },
+      { id: 20, name: "5060 Diamonds", price: 3210, category: "uid", active: true },
+      { id: 21, name: "10120 Diamonds", price: 6480, category: "uid", active: true },
+    ];
+
+    const REWARDS = [
+      { level: 1, target: 2000, gift: "1× Weekly Lite" },
+      { level: 2, target: 5000, gift: "2× Weekly Lite" },
+      { level: 3, target: 10000, gift: "3× Weekly Lite" },
+      { level: 4, target: 20000, gift: "1× Weekly Membership" },
+      { level: 5, target: 40000, gift: "2× Weekly Membership" },
+      { level: 6, target: 70000, gift: "3× Weekly Membership" },
+      { level: 7, target: 100000, gift: "5× Weekly Membership" },
+      { level: 8, target: 200000, gift: "1× Monthly Membership" },
+      { level: 9, target: 300000, gift: "2× Monthly Membership" },
+      { level: 10, target: 500000, gift: "3× Monthly Membership" },
+    ];
+
+    const money = (n) => new Intl.NumberFormat("bn-BD").format(Number(n || 0));
+
+    function load(key, fallback) {
+      try {
+        const value = localStorage.getItem(key);
+        return value ? JSON.parse(value) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function save(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function App() {
+      const [page, setPage] = useState("home");
+      const [adminPage, setAdminPage] = useState("dashboard");
+      const [packages, setPackages] = useState(() => load("fro_packages", INITIAL_PACKAGES));
+      const [users, setUsers] = useState(() => load("fro_users", []));
+      const [orders, setOrders] = useState(() => load("fro_orders", []));
+      const [deposits, setDeposits] = useState(() => load("fro_deposits", []));
+      const [settings, setSettings] = useState(() => load("fro_settings", DEFAULT_SETTINGS));
+      const [currentUser, setCurrentUser] = useState(() => load("fro_current_user", null));
+      const [adminLoggedIn, setAdminLoggedIn] = useState(() => load("fro_admin_login", false));
+
+      const [selectedCategory, setSelectedCategory] = useState("uid");
+      const [selectedPackage, setSelectedPackage] = useState(null);
+      const [loginMode, setLoginMode] = useState("login");
+      const [auth, setAuth] = useState({ name: "", phone: "", password: "" });
+      const [depositForm, setDepositForm] = useState({ method: "bKash", amount: "", trxId: "", sender: "" });
+      const [uid, setUid] = useState("");
+      const [adminPin, setAdminPin] = useState("");
+      const [newPackage, setNewPackage] = useState({ name: "", price: "", category: "uid" });
+      const [notice, setNotice] = useState("");
+
+      useEffect(() => save("fro_packages", packages), [packages]);
+      useEffect(() => save("fro_users", users), [users]);
+      useEffect(() => save("fro_orders", orders), [orders]);
+      useEffect(() => save("fro_deposits", deposits), [deposits]);
+      useEffect(() => save("fro_settings", settings), [settings]);
+      useEffect(() => save("fro_current_user", currentUser), [currentUser]);
+      useEffect(() => save("fro_admin_login", adminLoggedIn), [adminLoggedIn]);
+
+      const activePackages = packages.filter((p) => p.active);
+      const visiblePackages = activePackages.filter((p) => p.category === selectedCategory);
+      const userOrders = currentUser ? orders.filter((o) => o.userId === currentUser.id) : [];
+      const userSpent = currentUser ? userOrders.filter((o) => o.status !== "cancelled").reduce((sum, o) => sum + Number(o.price), 0) : 0;
+      const currentLevel = [...REWARDS].reverse().find((r) => userSpent >= r.target)?.level || 0;
+      const nextReward = REWARDS.find((r) => userSpent < r.target) || null;
+
+      function flash(message) {
+        setNotice(message);
+        setTimeout(() => setNotice(""), 2500);
+      }
+
+      function register() {
+        const name = auth.name.trim();
+        const phone = auth.phone.trim();
+        const password = auth.password;
+        if (!name || !phone || !password) { flash("সব তথ্য পূরণ করুন।"); return; }
+        if (phone.length < 10) { flash("সঠিক ফোন নম্বর দিন।"); return; }
+        if (users.some((u) => u.phone === phone)) { flash("এই ফোন নম্বর দিয়ে আগে থেকেই অ্যাকাউন্ট আছে।"); return; }
+
+        const user = { id: Date.now(), name, phone, password, balance: 0, createdAt: new Date().toISOString() };
+        setUsers((prev) => [...prev, user]);
+        setCurrentUser(user);
+        setPage("home");
+        setAuth({ name: "", phone: "", password: "" });
+        flash("অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে।");
+      }
+
+      function login() {
+        const user = users.find((u) => u.phone === auth.phone.trim() && u.password === auth.password);
+        if (!user) { flash("ফোন নম্বর অথবা password ভুল।"); return; }
+        setCurrentUser(user);
+        setPage("home");
+        setAuth({ name: "", phone: "", password: "" });
+        flash("Login successful.");
+      }
+
+      function logout() {
+        setCurrentUser(null);
+        setPage("home");
+        flash("Logout হয়েছে।");
+      }
+
+      function submitDeposit() {
+        if (!currentUser) { setPage("auth"); return; }
+        const amount = Number(depositForm.amount);
+        if (!amount || amount <= 0) { flash("সঠিক deposit amount দিন।"); return; }
+        if (!depositForm.trxId.trim()) { flash("Transaction ID দিন।"); return; }
+
+        const deposit = {
+          id: Date.now(), userId: currentUser.id, userName: currentUser.name,
+          phone: currentUser.phone, method: depositForm.method, amount,
+          trxId: depositForm.trxId.trim(), sender: depositForm.sender.trim(),
+          status: "pending", createdAt: new Date().toISOString(),
+        };
+
+        setDeposits((prev) => [deposit, ...prev]);
+        setDepositForm({ method: "bKash", amount: "", trxId: "", sender: "" });
+        flash("Deposit request Admin-এর কাছে পাঠানো হয়েছে।");
+      }
+
+      function buyPackage() {
+        if (!currentUser) { setPage("auth"); flash("Order করার আগে Login করুন।"); return; }
+        if (!selectedPackage) { flash("একটি package নির্বাচন করুন।"); return; }
+        if (selectedCategory === "uid" && uid.trim().length < 5) { flash("সঠিক Player UID দিন।"); return; }
+
+        const price = Number(selectedPackage.price);
+        if (Number(currentUser.balance) < price) { flash("❌ আপনার balance কম। আগে Deposit করুন।"); return; }
+
+        const order = {
+          id: Date.now(), userId: currentUser.id, userName: currentUser.name,
+          phone: currentUser.phone, uid: uid.trim(), packageId: selectedPackage.id,
+          packageName: selectedPackage.name, category: selectedPackage.category,
+          price, status: "pending", createdAt: new Date().toISOString(),
+        };
+
+        const updatedUser = { ...currentUser, balance: Number(currentUser.balance) - price };
+        setUsers((prev) => prev.map((u) => u.id === updatedUser.id ? updatedUser : u));
+        setCurrentUser(updatedUser);
+        setOrders((prev) => [order, ...prev]);
+        setUid("");
+        setSelectedPackage(null);
+        flash("Order সফলভাবে তৈরি হয়েছে।");
+      }
+
+      function approveDeposit(depositId) {
+        const deposit = deposits.find((d) => d.id === depositId);
+        if (!deposit || deposit.status !== "pending") return;
+
+        setDeposits((prev) => prev.map((d) => d.id === depositId ? { ...d, status: "approved" } : d));
+        setUsers((prev) => prev.map((u) => u.id === deposit.userId ? { ...u, balance: Number(u.balance) + Number(deposit.amount) } : u));
+        if (currentUser?.id === deposit.userId) {
+          setCurrentUser((prev) => ({ ...prev, balance: Number(prev.balance) + Number(deposit.amount) }));
+        }
+        flash("Deposit approve হয়েছে এবং balance যোগ হয়েছে।");
+      }
+
+      function rejectDeposit(depositId) {
+        setDeposits((prev) => prev.map((d) => d.id === depositId ? { ...d, status: "rejected" } : d));
+        flash("Deposit reject করা হয়েছে।");
+      }
+
+      function updateOrderStatus(orderId, status) {
+        setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status } : o));
+      }
+
+      function updatePackage(id, field, value) {
+        setPackages((prev) => prev.map((p) => p.id === id ? { ...p, [field]: field === "price" ? Number(value) : value } : p));
+      }
+
+      function deletePackage(id) {
+        if (!window.confirm("Package delete করবেন?")) return;
+        setPackages((prev) => prev.filter((p) => p.id !== id));
+      }
+
+      function addPackage() {
+        if (!newPackage.name || !newPackage.price) { flash("Package name এবং price দিন।"); return; }
+        const item = { id: Date.now(), name: newPackage.name, price: Number(newPackage.price), category: newPackage.category, active: true };
+        setPackages((prev) => [...prev, item]);
+        setNewPackage({ name: "", price: "", category: "uid" });
+        flash("নতুন package যোগ হয়েছে।");
+      }
+
+      function saveSettings() {
+        setSettings({ ...settings });
+        flash("Website settings update হয়েছে।");
+      }
+
+      function loginAdmin() {
+        if (adminPin === DEFAULT_ADMIN_PIN) {
+          setAdminLoggedIn(true);
+          setPage("admin");
+          setAdminPin("");
+        } else {
+          flash("Admin password ভুল।");
+        }
+      }
+
+      function logoutAdmin() {
+        setAdminLoggedIn(false);
+        setPage("home");
+      }
+
+      function resetDemo() {
+        if (!window.confirm("Demo data reset করবেন?")) return;
+        localStorage.clear();
+        window.location.reload();
+      }
+
+      const categoryTitle = {
+        uid: "💎 UID Top Up",
+        weeklyLite: "⚡ Weekly Lite",
+        weekly: "👑 Weekly Membership",
+        monthly: "👑 Monthly Membership",
+      };
+
+      return (
+        <div className="app">
+          <style>{`
+            * { box-sizing: border-box; }
+            body { margin: 0; font-family: Arial, sans-serif; background: radial-gradient(circle at top, #172554 0%, #050816 45%, #02030a 100%); color: #fff; }
+            button, input, select { font: inherit; }
+            button { cursor: pointer; }
+            .app { min-height: 100vh; padding-bottom: 90px; }
+            .container { width: min(100%, 520px); margin: auto; padding: 14px; }
+            .header { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px); background: rgba(4, 8, 25, .9); border-bottom: 1px solid rgba(255,255,255,.08); }
+            .header-inner { width: min(100%, 520px); margin: auto; padding: 14px; display: flex; align-items: center; justify-content: space-between; }
+            .brand { font-weight: 900; font-size: 20px; }
+            .wallet { background: linear-gradient(135deg,#00e5ff,#0066ff); padding: 8px 12px; border-radius: 999px; font-weight: 800; font-size: 13px; }
+            .hero { padding: 25px 0 12px; }
+            .hero h1 { margin: 0 0 7px; font-size: 28px; }
+            .hero p { margin: 0; opacity: .72; }
+            .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .category { border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.05); padding: 12px; border-radius: 15px; color: white; font-weight: 800; }
+            .category.active { background: linear-gradient(135deg,#06b6d4,#2563eb); border-color: transparent; }
+            .card { background: linear-gradient(145deg, rgba(255,255,255,.08), rgba(255,255,255,.035)); border: 1px solid rgba(255,255,255,.08); border-radius: 18px; padding: 14px; margin: 10px 0; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+            .package { transition: .15s; }
+            .package.selected { border: 1px solid #00e5ff; box-shadow: 0 0 0 2px rgba(0,229,255,.15); }
+            .package-name { font-weight: 900; margin-bottom: 7px; }
+            .price { font-size: 21px; font-weight: 900; color: #6ee7ff; }
+            .btn { width: 100%; border: 0; border-radius: 13px; padding: 12px; font-weight: 900; color: white; background: linear-gradient(135deg,#0891b2,#2563eb); margin-top: 8px; }
+            .btn.secondary { background: rgba(255,255,255,.08); }
+            .btn.success { background: linear-gradient(135deg,#059669,#16a34a); }
+            .btn.danger { background: linear-gradient(135deg,#dc2626,#991b1b); }
+            input, select { width: 100%; background: rgba(0,0,0,.28); color: white; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 12px; margin: 5px 0; outline: none; }
+            option { background: #101827; }
+            .row { display: flex; gap: 8px; }
+            .row > * { flex: 1; }
+            .stats { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+            .stat { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); border-radius: 16px; padding: 15px; }
+            .stat small { opacity: .65; }
+            .stat strong { display: block; font-size: 23px; margin-top: 5px; }
+            .bottom { position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; background: rgba(3,7,18,.96); backdrop-filter: blur(14px); border-top: 1px solid rgba(255,255,255,.08); }
+            .bottom-inner { width: min(100%, 520px); margin: auto; display: grid; grid-template-columns: repeat(4,1fr); }
+            .nav { border: 0; background: transparent; color: #8892a8; padding: 12px 5px; font-size: 11px; font-weight: 800; }
+            .nav.active { color: #38d9ff; }
+            .admin-nav { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 14px; }
+            .admin-nav button { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); color: white; padding: 10px 5px; border-radius: 12px; font-size: 11px; }
+            .admin-nav button.active { background: #2563eb; }
+            .order-status { display: inline-block; padding: 5px 8px; border-radius: 999px; background: rgba(255,255,255,.08); font-size: 11px; font-weight: 900; }
+            .reward-progress { height: 9px; background: rgba(255,255,255,.08); border-radius: 20px; overflow: hidden; margin: 10px 0; }
+            .reward-progress div { height: 100%; background: linear-gradient(90deg,#06b6d4,#6366f1); }
+            .small { font-size: 12px; opacity: .68; }
+            .center { text-align: center; }
+            .top-gap { margin-top: 15px; }
+            .toast { position: fixed; top: 75px; left: 50%; transform: translateX(-50%); z-index: 100; background: #111827; border: 1px solid rgba(255,255,255,.12); padding: 11px 16px; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,.3); font-size: 13px; font-weight: 800; }
+          `}</style>
+
+          {notice && <div className="toast">{notice}</div>}
+
+          <header className="header">
+            <div className="header-inner">
+              <div className="brand">⚡ {SITE_NAME}</div>
+              {currentUser && <div className="wallet">৳{money(currentUser.balance)}</div>}
+            </div>
+          </header>
+
+          <main className="container">
+            {page === "home" && (
+              <>
+                <section className="hero">
+                  <h1>💎 Diamond Top-Up</h1>
+                  <p>{settings.notice}</p>
+                </section>
+
+                <div className="card">
+                  <div className="small">Payment Support</div>
+                  <strong>💜 bKash: {settings.bkash}</strong><br />
+                  <strong>🔴 Nagad: {settings.nagad}</strong>
+                </div>
+
+                <div className="grid">
+                  {Object.keys(categoryTitle).map((cat) => (
+                    <button key={cat} className={"category " + (selectedCategory === cat ? "active" : "")} onClick={() => { setSelectedCategory(cat); setSelectedPackage(null); }}>
+                      {categoryTitle[cat]}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="top-gap">
+                  <h3>{categoryTitle[selectedCategory]}</h3>
+                  {selectedCategory === "uid" && (
+                    <input value={uid} onChange={(e) => setUid(e.target.value)} placeholder="Player UID লিখুন" />
+                  )}
+
+                  {visiblePackages.map((pkg) => (
+                    <div key={pkg.id} className={"card package " + (selectedPackage?.id === pkg.id ? "selected" : "")} onClick={() => setSelectedPackage(pkg)}>
+                      <div className="package-name">{pkg.name}</div>
+                      <div className="price">৳{money(pkg.price)}</div>
+                      {selectedPackage?.id === pkg.id && (
+                        <button className="btn" onClick={(e) => { e.stopPropagation(); buyPackage(); }}>🛒 Buy Now</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {currentUser && (
+                  <div className="card">
+                    <h3>🎁 Reward Progress</h3>
+                    <strong>Level {currentLevel}</strong>
+                    {nextReward ? (
+                      <>
+                        <p>পরবর্তী Gift:<br /><strong>{nextReward.gift}</strong></p>
+                        <div className="reward-progress">
+                          <div style={{ width: Math.min(100, (userSpent / nextReward.target) * 100) + "%" }} />
+                        </div>
+                        <div className="small">৳{money(userSpent)} / ৳{money(nextReward.target)}</div>
+                      </>
+                    ) : (
+                      <p>🎉 সব ১০টি Reward Level complete!</p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {page === "auth" && (
+              <div className="card">
+                <h2>{loginMode === "login" ? "🔐 Login" : "📝 Registration"}</h2>
+                {loginMode === "register" && (
+                  <input placeholder="আপনার নাম" value={auth.name} onChange={(e) => setAuth({ ...auth, name: e.target.value })} />
+                )}
+                <input placeholder="Phone Number" value={auth.phone} onChange={(e) => setAuth({ ...auth, phone: e.target.value })} />
+                <input type="password" placeholder="Password" value={auth.password} onChange={(e) => setAuth({ ...auth, password: e.target.value })} />
+                <button className="btn" onClick={loginMode === "login" ? login : register}>{loginMode === "login" ? "Login" : "Create Account"}</button>
+                <button className="btn secondary" onClick={() => setLoginMode(loginMode === "login" ? "register" : "login")}>
+                  {loginMode === "login" ? "Create New Account" : "Already have an account? Login"}
+                </button>
+              </div>
+            )}
+
+            {page === "deposit" && (
+              <>
+                {!currentUser ? (
+                  <div className="card center">
+                    <h2>🔐 Login Required</h2>
+                    <p>Deposit করতে Login করুন।</p>
+                    <button className="btn" onClick={() => setPage("auth")}>Login</button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="hero">
+                      <h2>💳 Add Balance</h2>
+                      <p>bKash/Nagad থেকে টাকা পাঠিয়ে Deposit Request করুন।</p>
+                    </div>
+                    <div className="card">
+                      <strong>💜 bKash: {settings.bkash}</strong>
+                      <p></p>
+                      <strong>🔴 Nagad: {settings.nagad}</strong>
+                      <p></p>
+                      <select value={depositForm.method} onChange={(e) => setDepositForm({ ...depositForm, method: e.target.value })}>
+                        <option>bKash</option>
+                        <option>Nagad</option>
+                      </select>
+                      <input placeholder="Amount" type="number" value={depositForm.amount} onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })} />
+                      <input placeholder="Sender Number" value={depositForm.sender} onChange={(e) => setDepositForm({ ...depositForm, sender: e.target.value })} />
+                      <input placeholder="Transaction ID" value={depositForm.trxId} onChange={(e) => setDepositForm({ ...depositForm, trxId: e.target.value })} />
+                      <button className="btn success" onClick={submitDeposit}>Deposit Request</button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {page === "orders" && (
+              <div>
+                <h2>📦 My Orders</h2>
+                {!currentUser ? (
+                  <div className="card"><p>Orders দেখতে Login করুন।</p><button className="btn" onClick={() => setPage("auth")}>Login</button></div>
+                ) : userOrders.length === 0 ? (
+                  <div className="card center">এখনো কোনো Order নেই।</div>
+                ) : (
+                  userOrders.map((order) => (
+                    <div className="card" key={order.id}>
+                      <strong>{order.packageName}</strong>
+                      <p>Price: ৳{money(order.price)}</p>
+                      {order.uid && <p>UID: {order.uid}</p>}
+                      <span className="order-status">{order.status}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {page === "account" && (
+              <div>
+                {currentUser ? (
+                  <>
+                    <div className="card">
+                      <h2>👤 {currentUser.name}</h2>
+                      <p>📱 {currentUser.phone}</p>
+                      <h2>Balance: ৳{money(currentUser.balance)}</h2>
+                    </div>
+                    <button className="btn" onClick={() => setPage("deposit")}>💳 Add Balance</button>
+                    <button className="btn secondary" onClick={() => setPage("orders")}>📦 My Orders</button>
+                    <button className="btn danger" onClick={logout}>Logout</button>
+                  </>
+                ) : (
+                  <div className="card center">
+                    <h2>👤 Account</h2>
+                    <button className="btn" onClick={() => setPage("auth")}>Login / Register</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {page === "adminLogin" && (
+              <div className="card">
+                <h2>🔐 Admin Panel</h2>
+                <input type="password" placeholder="Admin Password" value={adminPin} onChange={(e) => setAdminPin(e.target.value)} />
+                <button className="btn" onClick={loginAdmin}>Enter Admin Panel</button>
+                <p className="small">Admin password: 264891</p>
+              </div>
+            )}
+
+            {page === "admin" && adminLoggedIn && (
+              <>
+                <div className="hero">
+                  <h2>⚙️ Admin Dashboard</h2>
+                  <p>FRO TopUp BD Control Center</p>
+                </div>
+                <div className="admin-nav">
+                  {[["dashboard", "📊 Dashboard"], ["orders", "📦 Orders"], ["deposits", "💳 Deposits"], ["packages", "💎 Packages"], ["users", "👥 Users"], ["settings", "⚙️ Settings"]].map(([id, label]) => (
+                    <button key={id} className={adminPage === id ? "active" : ""} onClick={() => setAdminPage(id)}>{label}</button>
+                  ))}
+                </div>
+
+                {adminPage === "dashboard" && (
+                  <>
+                    <div className="stats">
+                      <div className="stat"><small>Customers</small><strong>{users.length}</strong></div>
+                      <div className="stat"><small>Orders</small><strong>{orders.length}</strong></div>
+                      <div className="stat"><small>Deposits</small><strong>{deposits.length}</strong></div>
+                      <div className="stat"><small>Sales</small><strong>৳{money(orders.filter((o) => o.status !== "cancelled").reduce((s, o) => s + Number(o.price), 0))}</strong></div>
+                    </div>
+                    <div className="card">
+                      <h3>⏳ Pending Deposits</h3>
+                      <strong>{deposits.filter((d) => d.status === "pending").length}</strong>
+                    </div>
+                  </>
+                )}
+
+                {adminPage === "orders" && (
+                  <>
+                    <h3>📦 Customer Orders</h3>
+                    {orders.length === 0 && <div className="card">No orders yet.</div>}
+                    {orders.map((order) => (
+                      <div className="card" key={order.id}>
+                        <strong>{order.packageName}</strong>
+                        <p>Customer: {order.userName}</p>
+                        <p>Phone: {order.phone}</p>
+                        <p>UID: {order.uid || "N/A"}</p>
+                        <p>Amount: ৳{money(order.price)}</p>
+                        <select value={order.status} onChange={(e) => updateOrderStatus(order.id, e.target.value)}>
+                          <option value="pending">Pending</option>
+                          <option value="processing">Processing</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {adminPage === "deposits" && (
+                  <>
+                    <h3>💳 Deposit Requests</h3>
+                    {deposits.length === 0 && <div className="card">No deposit requests.</div>}
+                    {deposits.map((deposit) => (
+                      <div className="card" key={deposit.id}>
+                        <strong>{deposit.method} — ৳{money(deposit.amount)}</strong>
+                        <p>Customer: {deposit.userName}</p>
+                        <p>Phone: {deposit.phone}</p>
+                        <p>Sender: {deposit.sender}</p>
+                        <p>TrxID: {deposit.trxId}</p>
+                        <span className="order-status">{deposit.status}</span>
+                        {deposit.status === "pending" && (
+                          <div className="row">
+                            <button className="btn success" onClick={() => approveDeposit(deposit.id)}>✓ Approve</button>
+                            <button className="btn danger" onClick={() => rejectDeposit(deposit.id)}>✕ Reject</button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {adminPage === "packages" && (
+                  <>
+                    <h3>💎 Package Management</h3>
+                    <div className="card">
+                      <h4>Add New Package</h4>
+                      <input placeholder="Package Name" value={newPackage.name} onChange={(e) => setNewPackage({ ...newPackage, name: e.target.value })} />
+                      <input type="number" placeholder="Price" value={newPackage.price} onChange={(e) => setNewPackage({ ...newPackage, price: e.target.value })} />
+                      <select value={newPackage.category} onChange={(e) => setNewPackage({ ...newPackage, category: e.target.value })}>
+                        <option value="uid">UID Top Up</option>
+                        <option value="weeklyLite">Weekly Lite</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                      </select>
+                      <button className="btn success" onClick={addPackage}>+ Add Package</button>
+                    </div>
+
+                    {packages.map((pkg) => (
+                      <div className="card" key={pkg.id}>
+                        <input value={pkg.name} onChange={(e) => updatePackage(pkg.id, "name", e.target.value)} />
+                        <input type="number" value={pkg.price} onChange={(e) => updatePackage(pkg.id, "price", e.target.value)} />
+                        <select value={pkg.category} onChange={(e) => updatePackage(pkg.id, "category", e.target.value)}>
+                          <option value="uid">UID Top Up</option>
+                          <option value="weeklyLite">Weekly Lite</option>
+                          <option value="weekly">Weekly</option>
+                          <option value="monthly">Monthly</option>
+                        </select>
+                        <div className="row">
+                          <button className="btn secondary" onClick={() => updatePackage(pkg.id, "active", !pkg.active)}>{pkg.active ? "Disable" : "Enable"}</button>
+                          <button className="btn danger" onClick={() => deletePackage(pkg.id)}>Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {adminPage === "users" && (
+                  <>
+                    <h3>👥 Customers</h3>
+                    {users.map((user) => (
+                      <div className="card" key={user.id}>
+                        <strong>{user.name}</strong>
+                        <p>📱 {user.phone}</p>
+                        <p>Balance: ৳{money(user.balance)}</p>
+                        <p>Orders: {orders.filter((o) => o.userId === user.id).length}</p>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {adminPage === "settings" && (
+                  <>
+                    <h3>⚙️ Website Settings</h3>
+                    <div className="card">
+                      <label>bKash Number</label>
+                      <input value={settings.bkash} onChange={(e) => setSettings({ ...settings, bkash: e.target.value })} />
+                      <label>Nagad Number</label>
+                      <input value={settings.nagad} onChange={(e) => setSettings({ ...settings, nagad: e.target.value })} />
+                      <label>WhatsApp</label>
+                      <input value={settings.whatsapp} onChange={(e) => setSettings({ ...settings, whatsapp: e.target.value })} />
+                      <label>Telegram</label>
+                      <input value={settings.telegram} onChange={(e) => setSettings({ ...settings, telegram: e.target.value })} />
+                      <label>Notice</label>
+                      <input value={settings.notice} onChange={(e) => setSettings({ ...settings, notice: e.target.value })} />
+                      <button className="btn success" onClick={saveSettings}>Save Website Settings</button>
+                    </div>
+
+                    <div className="card">
+                      <h3>🎁 Reward Levels</h3>
+                      {REWARDS.map((reward) => (
+                        <div key={reward.level} className="card">
+                          <strong>Level {reward.level}</strong>
+                          <p>Target: ৳{money(reward.target)}</p>
+                          <p>Gift: {reward.gift}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="card">
+                      <h3>⚠️ Demo Controls</h3>
+                      <button className="btn danger" onClick={resetDemo}>Reset All Demo Data</button>
+                    </div>
+                  </>
+                )}
+
+                <button className="btn secondary" onClick={logoutAdmin}>Admin Logout</button>
+              </>
+            )}
+          </main>
+
+          <nav className="bottom">
+            <div className="bottom-inner">
+              <button className={"nav " + (page === "home" ? "active" : "")} onClick={() => setPage("home")}>💎<br />TopUp</button>
+              <button className={"nav " + (page === "deposit" ? "active" : "")} onClick={() => setPage("deposit")}>💳<br />Deposit</button>
+              <button className={"nav " + (page === "orders" ? "active" : "")} onClick={() => setPage("orders")}>📦<br />Orders</button>
+              <button className={"nav " + (page === "account" ? "active" : "")} onClick={() => setPage("account")}>👤<br />Account</button>
+            </div>
+          </nav>
+
+          <div style={{ position: "fixed", right: 8, bottom: 88, zIndex: 40 }}>
+            <button onClick={() => adminLoggedIn ? setPage("admin") : setPage("adminLogin")} style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.05)", color: "rgba(255,255,255,.3)", borderRadius: 999, padding: "5px 8px", fontSize: 9 }}>
+              Admin
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+  </html>

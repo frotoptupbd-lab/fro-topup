@@ -1,670 +1,380 @@
+import React, { useState, useEffect } from 'react';
 
-<html lang="bn">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FRO TopUp BD - Official Store</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap');
-    body { font-family: 'Hind Siliguri', sans-serif; }
-  </style>
-</head>
-<body class="bg-slate-950 text-slate-100 min-h-screen pb-20 select-none">
-  <div id="root"></div>
+// Default Packages Data
+const INITIAL_PACKAGES = [
+  { id: 1, name: '25 Diamonds', price: 26, category: 'uid' },
+  { id: 2, name: '50 Diamonds', price: 39, category: 'uid' },
+  { id: 3, name: '115 Diamonds', price: 95, category: 'uid' },
+  { id: 4, name: '240 Diamonds', price: 169, category: 'uid' },
+  { id: 5, name: '355 Diamonds', price: 249, category: 'uid' },
+  { id: 6, name: '505 Diamonds', price: 345, category: 'uid' },
+  { id: 7, name: '610 Diamonds', price: 410, category: 'uid' },
+  { id: 8, name: '850 Diamonds', price: 565, category: 'uid' },
+  { id: 9, name: '1090 Diamonds', price: 780, category: 'uid' },
+  { id: 10, name: '1240 Diamonds', price: 850, category: 'uid' },
+  { id: 11, name: '1850 Diamonds', price: 1165, category: 'uid' },
+  { id: 12, name: '2530 Diamonds', price: 1620, category: 'uid' },
+  { id: 13, name: '5060 Diamonds', price: 3210, category: 'uid' },
+  { id: 14, name: '10120 Diamonds', price: 6480, category: 'uid' },
+  { id: 15, name: 'Weekly Lite', price: 48, category: 'weekly' },
+  { id: 16, name: '2x Weekly Lite', price: 96, category: 'weekly' },
+  { id: 17, name: '5x Weekly Lite', price: 240, category: 'weekly' },
+  { id: 18, name: '10x Weekly Lite', price: 480, category: 'weekly' },
+  { id: 19, name: '20x Weekly Lite', price: 960, category: 'weekly' },
+  { id: 20, name: 'Weekly Membership', price: 165, category: 'weekly' },
+  { id: 21, name: 'Monthly Membership', price: 810, category: 'monthly' },
+];
 
-  <script type="text/babel">
-    const { useState, useEffect } = React;
+// Initial Ranks / Giveaway Tiers (Image 9 Style)
+const INITIAL_RANKS = [
+  { id: 1, name: 'Bronze', range: '0 - 100 Tk', gift: 'Basic Avatar & 5 Diamonds', minSpend: 0 },
+  { id: 2, name: 'Silver', range: '101 - 1,000 Tk', gift: 'Custom Banner & 20 Diamonds', minSpend: 101 },
+  { id: 3, name: 'Gold', range: '1,001 - 5,000 Tk', gift: 'Exclusive Gun Skin Box', minSpend: 1001 },
+  { id: 4, name: 'Platinum', range: '5,001 - 10,000 Tk', gift: 'Weekly Membership Free', minSpend: 5001 },
+  { id: 5, name: 'Diamond', range: '10,001 - 25,000 Tk', gift: 'Monthly Membership Discount Voucher', minSpend: 10001 },
+  { id: 6, name: 'Heroic', range: '25,001 - 50,000 Tk', gift: 'Special Elite Pass Bundle', minSpend: 25001 },
+  { id: 7, name: 'Master', range: '50,001 - 100,000 Tk', gift: '1000 Free Diamonds Giveaway', minSpend: 50001 },
+  { id: 8, name: 'Grand Master', range: '100,000+ Tk', gift: 'VIP Permanent Emote & Custom Reward', minSpend: 100000 },
+];
 
-    const PRODUCTS = [
-      { id: 'w1', name: 'Weekly Membership', category: 'membership', price: 160 },
-      { id: 'm1', name: 'Monthly Membership', category: 'membership', price: 790 },
-      { id: 'wl1', name: 'Weekly Lite', category: 'membership', price: 50 },
-      { id: 'd1', name: '115 Diamonds', category: 'uid', price: 80 },
-      { id: 'd2', name: '240 Diamonds', category: 'uid', price: 160 },
-      { id: 'd3', name: '610 Diamonds', category: 'uid', price: 400 },
-      { id: 'd4', name: '1240 Diamonds', category: 'uid', price: 800 },
-    ];
+export default function App() {
+  // State Management with LocalStorage
+  const [packages, setPackages] = useState(() => {
+    const saved = localStorage.getItem('fro_packages');
+    return saved ? JSON.parse(saved) : INITIAL_PACKAGES;
+  });
 
-    function App() {
-      const [activeTab, setActiveTab] = useState('topup');
-      const [adminSubTab, setAdminSubTab] = useState('orders');
+  const [ranks, setRanks] = useState(() => {
+    const saved = localStorage.getItem('fro_ranks');
+    return saved ? JSON.parse(saved) : INITIAL_RANKS;
+  });
+
+  const [orders, setOrders] = useState(() => {
+    const saved = localStorage.getItem('fro_orders');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [showPopup, setShowPopup] = useState(true);
+  const [activeTab, setActiveTab] = useState('home'); // home, ranks, orders, admin
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  
+  // Checkout Form States
+  const [selectedPkg, setSelectedPkg] = useState(null);
+  const [phone, setPhone] = useState('');
+  const [trxId, setTrxId] = useState('');
+  const [userSpend, setUserSpend] = useState(450); // User spend example for rank calculation
+
+  // Admin Notice Settings State
+  const [popupNotice, setPopupNotice] = useState({
+    title: 'আমাদের টপআপ চালু আছে ✅',
+    description: 'কিভাবে টপআপ করবেন সেটি জানতে এখানে ক্লিক করে ভিডিওটি দেখুন',
+    videoLink: 'https://youtube.com',
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fro_packages', JSON.stringify(packages));
+    localStorage.setItem('fro_ranks', JSON.stringify(ranks));
+    localStorage.setItem('fro_orders', JSON.stringify(orders));
+  }, [packages, ranks, orders]);
+
+  // Handle WhatsApp Checkout Order Submission
+  const handleCheckout = (e) => {
+    e.preventDefault();
+    if (!selectedPkg || !phone || !trxId) {
+      alert('দয়া করে সব তথ্য সঠিকভাবে পূরণ করুন!');
+      return;
+    }
+
+    const newOrder = {
+      id: Date.now(),
+      packageName: selectedPkg.name,
+      price: selectedPkg.price,
+      phone,
+      trxId,
+      date: new Date().toLocaleString(),
+    };
+
+    setOrders([newOrder, ...orders]);
+    setUserSpend(prev => prev + selectedPkg.price);
+
+    // WhatsApp Message Generation (আপনার হোয়াটসঅ্যাপ নম্বর এখানে দিন)
+    const adminWhatsAppNumber = '8801700000000'; 
+    const message = `*New TopUp Order*%0A- Package: ${selectedPkg.name}%0A- Price: BDT ${selectedPkg.price}%0A- Phone/UID: ${phone}%0A- TrxID: ${trxId}`;
+    
+    window.open(`https://wa.me/${adminWhatsAppNumber}?text=${message}`, '_blank');
+    
+    alert('অর্ডার সফলভাবে সাবমিট হয়েছে এবং হোয়াটসঅ্যাপে রিডাইরেক্ট করা হচ্ছে!');
+    setSelectedPkg(null);
+    setPhone('');
+    setTrxId('');
+  };
+
+  // Admin Login Check
+  const handleAdminLogin = (e) => {
+    e.preventDefault();
+    if (adminPassword === 'admin123') {
+      setIsAdminLoggedIn(true);
+    } else {
+      alert('ভুল পাসওয়ার্ড!');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-800 pb-24 font-sans">
       
-      const [users, setUsers] = useState(() => JSON.parse(localStorage.getItem('fro_users')) || []);
-      const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('fro_current_user')) || null);
-      const [orders, setOrders] = useState(() => JSON.parse(localStorage.getItem('fro_orders')) || []);
-      const [deposits, setDeposits] = useState(() => JSON.parse(localStorage.getItem('fro_deposits')) || []);
-      
-      const [settings, setSettings] = useState(() => JSON.parse(localStorage.getItem('fro_settings')) || {
-        bkash: '01994835545',
-        nagad: '01994835545',
-        whatsapp: '01994835545',
-        adminPin: '264891'
-      });
+      {/* Top Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-40 flex justify-between items-center px-4 py-3">
+        <div className="flex items-center space-x-2">
+          <h1 className="text-xl font-bold text-indigo-700 tracking-wide">TOPUP BUZZ</h1>
+        </div>
+        <div className="flex items-center space-x-3">
+          <div className="bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full text-sm font-semibold text-indigo-700">
+            ৳ 0টাকা
+          </div>
+          <button 
+            onClick={() => setActiveTab('admin')}
+            className="bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg font-medium"
+          >
+            Admin
+          </button>
+        </div>
+      </header>
 
-      const [authMode, setAuthMode] = useState('login');
-      const [authPhone, setAuthPhone] = useState('');
-      const [authPass, setAuthPass] = useState('');
-      const [authName, setAuthName] = useState('');
+      {/* Popup Modal (Image 7 & 8 Style) */}
+      {showPopup && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl relative">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{popupNotice.title}</h3>
+            <p className="text-gray-600 text-sm mb-6">{popupNotice.description}</p>
+            <a 
+              href={popupNotice.videoLink} 
+              target="_blank" 
+              rel="noreferrer"
+              className="block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl mb-3 shadow text-sm"
+            >
+              ক্লিক করুন (ভিডিও দেখুন)
+            </a>
+            <button 
+              onClick={() => setShowPopup(false)}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl shadow text-sm"
+            >
+              ✕ CLOSE
+            </button>
+          </div>
+        </div>
+      )}
 
-      const [selectedProduct, setSelectedProduct] = useState(null);
-      const [playerUid, setPlayerUid] = useState('');
-      const [quantity, setQuantity] = useState(1);
-      const [paymentType, setPaymentType] = useState('balance');
-      const [trxId, setTrxId] = useState('');
+      {/* Main Content Area */}
+      <main className="max-w-md mx-auto p-4">
 
-      const [depMethod, setDepMethod] = useState('bkash');
-      const [depSender, setDepSender] = useState('');
-      const [depAmount, setDepAmount] = useState('');
-      const [depTrx, setDepTrx] = useState('');
-
-      const [adminPinInput, setAdminPinInput] = useState('');
-      const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-
-      useEffect(() => localStorage.setItem('fro_users', JSON.stringify(users)), [users]);
-      useEffect(() => localStorage.setItem('fro_current_user', JSON.stringify(currentUser)), [currentUser]);
-      useEffect(() => localStorage.setItem('fro_orders', JSON.stringify(orders)), [orders]);
-      useEffect(() => localStorage.setItem('fro_deposits', JSON.stringify(deposits)), [deposits]);
-      useEffect(() => localStorage.setItem('fro_settings', JSON.stringify(settings)), [settings]);
-
-      const handleAuth = (e) => {
-        e.preventDefault();
-        if (!authPhone || !authPass) return alert('ফোন নম্বর ও পাসওয়ার্ড দিন!');
-        
-        if (authMode === 'register') {
-          if (!authName) return alert('আপনার নাম দিন!');
-          if (users.find(u => u.phone === authPhone)) return alert('এই নম্বর দিয়ে ইতোমধ্যেই অ্যাকাউন্ট রয়েছে!');
-          
-          const newUser = { phone: authPhone, pass: authPass, name: authName, balance: 0, totalSpent: 0 };
-          setUsers([...users, newUser]);
-          setCurrentUser(newUser);
-          alert('অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!');
-        } else {
-          const user = users.find(u => u.phone === authPhone && u.pass === authPass);
-          if (!user) return alert('ফোন নম্বর অথবা পাসওয়ার্ড ভুল!');
-          setCurrentUser(user);
-          alert('লগইন সফল হয়েছে!');
-        }
-        setAuthPhone(''); setAuthPass(''); setAuthName('');
-      };
-
-      const handleLogout = () => {
-        setCurrentUser(null);
-        alert('লগআউট করা হয়েছে!');
-      };
-
-      const handleDepositSubmit = (e) => {
-        e.preventDefault();
-        if (!currentUser) return alert('ডিপোজিট করতে আগে লগইন করুন!');
-        if (!depSender || !depAmount || !depTrx) return alert('সবগুলো তথ্য সঠিকভাবে পূরণ করুন!');
-
-        const newDep = {
-          id: 'DEP-' + Date.now(),
-          userPhone: currentUser.phone,
-          userName: currentUser.name,
-          method: depMethod,
-          sender: depSender,
-          amount: Number(depAmount),
-          trxId: depTrx,
-          status: 'Pending',
-          date: new Date().toLocaleString('bn-BD')
-        };
-
-        setDeposits([newDep, ...deposits]);
-        alert('ডিপোজিট রিকোয়েস্ট জমা হয়েছে!');
-        setDepSender(''); setDepAmount(''); setDepTrx('');
-      };
-
-      const handleOrderSubmit = (e) => {
-        e.preventDefault();
-        if (!currentUser) return alert('অর্ডার করতে প্রথমে লগইন করুন!');
-        if (!playerUid) return alert('প্লেয়ার UID দিন!');
-
-        const totalCost = selectedProduct.price * quantity;
-
-        if (paymentType === 'balance') {
-          if (currentUser.balance < totalCost) {
-            return alert(`পর্যাপ্ত ব্যালেন্স নেই! আপনার ব্যালেন্স: ৳${currentUser.balance}।`);
-          }
-          const updatedUser = { 
-            ...currentUser, 
-            balance: currentUser.balance - totalCost,
-            totalSpent: currentUser.totalSpent + totalCost 
-          };
-          setCurrentUser(updatedUser);
-          setUsers(users.map(u => u.phone === currentUser.phone ? updatedUser : u));
-        } else {
-          if (!trxId) return alert('TrxID বা লেনদেন নম্বর দিন!');
-        }
-
-        const newOrder = {
-          id: 'ORD-' + Date.now(),
-          userPhone: currentUser.phone,
-          productName: selectedProduct.name,
-          playerUid,
-          quantity,
-          unitPrice: selectedProduct.price,
-          totalPrice: totalCost,
-          paymentMethod: paymentType === 'balance' ? 'Account Balance' : 'Direct TrxID',
-          trxId: paymentType === 'balance' ? 'PAID_VIA_BALANCE' : trxId,
-          isGiveaway: false,
-          status: 'Pending',
-          date: new Date().toLocaleString('bn-BD')
-        };
-
-        setOrders([newOrder, ...orders]);
-        alert('অর্ডার সফলভাবে জমা হয়েছে!');
-        setSelectedProduct(null); setPlayerUid(''); setQuantity(1); setTrxId('');
-      };
-
-      const handleGiveawayClaim = () => {
-        if (!currentUser) return alert('গিভওয়ে ক্লেম করতে লগইন করুন!');
-        if (!playerUid) return alert('আপনার প্লেয়ার UID দিন!');
-        if (currentUser.totalSpent < 5000) {
-          return alert(`গিভওয়ে পেতে অন্তত ৳৫,০০০ কেনাকাটা থাকতে হবে।`);
-        }
-
-        const giveawayOrder = {
-          id: 'GIVEAWAY-' + Date.now(),
-          userPhone: currentUser.phone,
-          productName: '🎁 [GIVEAWAY] Weekly Lite',
-          playerUid,
-          quantity: 1,
-          unitPrice: 0,
-          totalPrice: 0,
-          paymentMethod: 'FREE_GIVEAWAY',
-          trxId: 'GIVEAWAY_CLAIMED',
-          isGiveaway: true,
-          status: 'Pending',
-          date: new Date().toLocaleString('bn-BD')
-        };
-
-        setOrders([giveawayOrder, ...orders]);
-        alert('🎉 গিভওয়ে দাবি জমা হয়েছে!');
-        setPlayerUid('');
-      };
-
-      const handleApproveDeposit = (dep) => {
-        setDeposits(deposits.map(d => d.id === dep.id ? { ...d, status: 'Approved' } : d));
-        setUsers(users.map(u => {
-          if (u.phone === dep.userPhone) {
-            const newBal = u.balance + dep.amount;
-            if (currentUser && currentUser.phone === u.phone) {
-              setCurrentUser({ ...currentUser, balance: newBal });
-            }
-            return { ...u, balance: newBal };
-          }
-          return u;
-        }));
-        alert(`৳${dep.amount} ব্যালেন্স যোগ করা হয়েছে!`);
-      };
-
-      const handleRejectDeposit = (id) => {
-        setDeposits(deposits.map(d => d.id === id ? { ...d, status: 'Rejected' } : d));
-      };
-
-      const handleUpdateOrderStatus = (id, status) => {
-        setOrders(orders.map(o => o.id === id ? { ...o, status } : o));
-      };
-
-      const handleAdminLogin = (e) => {
-        e.preventDefault();
-        if (adminPinInput === '264891' || adminPinInput === settings.adminPin) {
-          setIsAdminLoggedIn(true);
-        } else {
-          alert('ভুল পিন!');
-        }
-      };
-
-      const openWhatsAppSupport = () => {
-        const cleanNumber = settings.whatsapp.replace(/[^0-9]/g, '');
-        const formattedNumber = cleanNumber.startsWith('88') ? cleanNumber : '88' + cleanNumber;
-        window.open(`https://wa.me/${formattedNumber}?text=হ্যালো,%20FRO%20TopUp%20BD%20সাপোর্ট%20টিম।%20আমার%20একটি%20সহায়তা%20প্রয়োজন।`, '_blank');
-      };
-
-      return (
-        <div class="max-w-md mx-auto min-h-screen bg-slate-900 shadow-2xl flex flex-col border-x border-slate-800 relative">
-          
-          {/* Header */}
-          <header class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-4 border-b border-indigo-500/20 flex justify-between items-center sticky top-0 z-40 backdrop-blur-md bg-opacity-90">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-black text-sm">
-                F
-              </div>
-              <div>
-                <h1 class="text-sm font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 flex items-center gap-1">
-                  FRO TOPUP BD <i class="fa-solid fa-circle-check text-[10px] text-emerald-400"></i>
-                </h1>
-                <p class="text-[9px] text-slate-400 font-medium">Official Gaming Store</p>
-              </div>
+        {/* Home Tab */}
+        {activeTab === 'home' && (
+          <div>
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-4 text-white mb-6 shadow-lg">
+              <h2 className="text-lg font-bold">২০২৬ সালের সেরা সাইট 🔥</h2>
+              <p className="text-xs opacity-90 mt-1">সবচেয়ে কম মূল্যে ইনস্ট্যান্ট টপআপ করুন!</p>
             </div>
 
-            {currentUser ? (
-              <div class="text-right">
-                <div class="text-xs bg-emerald-500/10 text-emerald-400 font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
-                  <i class="fa-solid fa-coins text-[10px]"></i> ৳{currentUser.balance}
+            <h3 className="font-bold text-md text-gray-800 mb-3">Select Package</h3>
+            
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {packages.map((pkg) => (
+                <div 
+                  key={pkg.id}
+                  onClick={() => setSelectedPkg(pkg)}
+                  className={`border rounded-xl p-3 cursor-pointer transition bg-white shadow-sm flex flex-col justify-between ${selectedPkg?.id === pkg.id ? 'border-indigo-600 ring-2 ring-indigo-100' : 'border-gray-200'}`}
+                >
+                  <span className="font-semibold text-gray-800 text-sm">{pkg.name}</span>
+                  <span className="text-indigo-600 font-bold mt-2">BDT {pkg.price}</span>
                 </div>
-              </div>
-            ) : (
-              <button onClick={() => setActiveTab('account')} class="text-xs bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold px-3 py-1 rounded-full shadow-lg shadow-emerald-500/20 transition">
-                লগইন
-              </button>
-            )}
-          </header>
+              ))}
+            </div>
 
-          {/* Banner Notice */}
-          <div class="bg-indigo-950/60 border-b border-indigo-500/20 px-3 py-1.5 flex items-center gap-2 text-[11px] text-indigo-200">
-            <i class="fa-solid fa-bullhorn text-emerald-400 animate-pulse"></i>
-            <span class="truncate">২৪ ঘণ্টা যেকোনো সহায়তার জন্য হোয়াটসঅ্যাপ হেল্পলাইনে যোগাযোগ করুন।</span>
-          </div>
-
-          {/* Main Body */}
-          <main class="p-4 flex-1">
-            {activeTab === 'topup' && (
-              <div class="space-y-4">
-                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                  <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="fa-solid fa-fire text-amber-500"></i> পপুলার আইটেমস
-                  </h2>
-                  <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">ইনস্ট্যান্ট ডেটা</span>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                  {PRODUCTS.map(p => (
-                    <div key={p.id} onClick={() => { setSelectedProduct(p); setQuantity(1); }}
-                      class="bg-slate-800/80 hover:bg-slate-800 p-3.5 rounded-2xl border border-slate-700/60 hover:border-emerald-500/50 cursor-pointer transition-all shadow-lg hover:shadow-emerald-500/10 flex flex-col justify-between group">
-                      <div>
-                        <div class="font-bold text-xs text-slate-100 group-hover:text-emerald-400 transition mb-1">{p.name}</div>
-                        <span class="text-[9px] font-semibold bg-indigo-950 text-indigo-300 border border-indigo-800/50 px-2 py-0.5 rounded-md uppercase">{p.category}</span>
-                      </div>
-                      <div class="flex justify-between items-end mt-4">
-                        <div class="text-emerald-400 font-extrabold text-sm">৳{p.price}</div>
-                        <div class="w-6 h-6 rounded-full bg-slate-700 group-hover:bg-emerald-500 group-hover:text-slate-950 text-slate-300 flex items-center justify-center text-[10px] transition">
-                          <i class="fa-solid fa-plus"></i>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'deposit' && (
-              <div class="space-y-4">
-                <h2 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-2 flex items-center gap-2">
-                  <i class="fa-solid fa-wallet text-emerald-400"></i> একাউন্ট ডিপোজিট (Deposit)
-                </h2>
-
-                <div class="bg-gradient-to-br from-slate-800 to-slate-800/40 p-4 rounded-2xl border border-slate-700/80 space-y-2.5 text-xs shadow-xl">
-                  <div class="font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <i class="fa-solid fa-shield-halved text-emerald-400"></i> পেমেন্ট নম্বরসমূহ (Personal):
-                  </div>
-                  <div class="flex justify-between items-center bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/50">
-                    <span class="text-pink-400 font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px]"></i> bKash</span>
-                    <span class="font-mono text-emerald-400 font-bold select-all bg-slate-950 px-2 py-1 rounded border border-slate-800">{settings.bkash}</span>
-                  </div>
-                  <div class="flex justify-between items-center bg-slate-900/80 p-2.5 rounded-xl border border-slate-700/50">
-                    <span class="text-orange-400 font-bold flex items-center gap-1.5"><i class="fa-solid fa-circle text-[6px]"></i> Nagad</span>
-                    <span class="font-mono text-emerald-400 font-bold select-all bg-slate-950 px-2 py-1 rounded border border-slate-800">{settings.nagad}</span>
-                  </div>
-                </div>
-
-                <form onSubmit={handleDepositSubmit} class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60 space-y-3">
+            {/* Checkout Form */}
+            {selectedPkg && (
+              <div className="bg-white border border-indigo-100 p-4 rounded-2xl shadow-md mb-6">
+                <h4 className="font-bold text-gray-800 mb-2 text-sm">Selected: <span className="text-indigo-600">{selectedPkg.name} (BDT {selectedPkg.price})</span></h4>
+                <form onSubmit={handleCheckout} className="space-y-3">
                   <div>
-                    <label class="block text-[11px] text-slate-400 mb-1">পেমেন্ট মেথড</label>
-                    <select value={depMethod} onChange={e => setDepMethod(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500">
-                      <option value="bkash">bKash (বিকাশ)</option>
-                      <option value="nagad">Nagad (নগদ)</option>
-                    </select>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">আপনার ফোন নম্বর / UID দিন</label>
+                    <input 
+                      type="text" 
+                      value={phone} 
+                      onChange={(e) => setPhone(e.target.value)} 
+                      placeholder="01XXXXXXXXX" 
+                      className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:border-indigo-600"
+                      required 
+                    />
                   </div>
-
                   <div>
-                    <label class="block text-[11px] text-slate-400 mb-1">যে নম্বর থেকে টাকা পাঠিয়েছেন</label>
-                    <input type="text" placeholder="017xxxxxxxx" value={depSender} onChange={e => setDepSender(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"/>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">ট্রানজেকশন আইডি (TrxID)</label>
+                    <input 
+                      type="text" 
+                      value={trxId} 
+                      onChange={(e) => setTrxId(e.target.value)} 
+                      placeholder="TrxID লিখুন" 
+                      className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:border-indigo-600"
+                      required 
+                    />
                   </div>
-
-                  <div>
-                    <label class="block text-[11px] text-slate-400 mb-1">টাকার পরিমাণ (Amount)</label>
-                    <input type="number" placeholder="৳100" value={depAmount} onChange={e => setDepAmount(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"/>
-                  </div>
-
-                  <div>
-                    <label class="block text-[11px] text-slate-400 mb-1">TrxID (ট্রানজেকশন আইডি)</label>
-                    <input type="text" placeholder="TrxID দিন" value={depTrx} onChange={e => setDepTrx(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"/>
-                  </div>
-
-                  <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold p-3 rounded-xl text-xs transition shadow-lg shadow-emerald-500/20">
-                    ডিপোজিট রিকোয়েস্ট পাঠান
+                  <button 
+                    type="submit" 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm shadow transition"
+                  >
+                    Confirm & Send to WhatsApp 🚀
                   </button>
                 </form>
               </div>
             )}
+          </div>
+        )}
 
-            {activeTab === 'giveaway' && (
-              <div class="space-y-4">
-                <h2 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-2 flex items-center gap-2">
-                  <i class="fa-solid fa-gift text-amber-400"></i> বিশেষ গিভওয়ে ও রিওয়ার্ড
-                </h2>
+        {/* Ranks & Giveaway Tab (Image 9 Style) */}
+        {activeTab === 'ranks' && (
+          <div>
+            <h3 className="font-bold text-lg mb-4 text-gray-800">Giveaway & Ranks Level</h3>
+            <div className="space-y-3">
+              {ranks.map((rank, index) => {
+                const isUnlocked = userSpend >= rank.minSpend;
+                const isCurrent = userSpend >= rank.minSpend && (index === ranks.length - 1 || userSpend < ranks[index + 1].minSpend);
 
-                <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/60 space-y-2">
-                  <div class="flex justify-between text-xs">
-                    <span class="text-slate-300">লেভেল প্রগ্রেস (৳৫,০০০ লক্ষ্য)</span>
-                    <span class="text-emerald-400 font-bold">৳{currentUser ? currentUser.totalSpent : 0} / ৳5000</span>
-                  </div>
-                  <div class="w-full bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-700/50">
-                    <div class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all" style={{ width: `${Math.min(((currentUser ? currentUser.totalSpent : 0) / 5000) * 100, 100)}%` }}></div>
-                  </div>
-                </div>
-
-                <div class="bg-slate-800/80 p-4 rounded-2xl border border-indigo-500/30 space-y-3">
-                  <h3 class="font-bold text-xs text-amber-400 flex items-center gap-1.5"><i class="fa-solid fa-crown"></i> Weekly Lite (ফ্রি গিভওয়ে)</h3>
-                  <p class="text-[11px] text-slate-300">শর্ত: আপনার অ্যাকাউন্টে অন্তত ৳৫,০০০ টাকার সর্বমোট কেনাকাটা থাকতে হবে।</p>
-
-                  <input type="text" placeholder="আপনার ফ্রি ফায়ার UID লিখুন" value={playerUid} onChange={e => setPlayerUid(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white"/>
-
-                  <button onClick={handleGiveawayClaim} class={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition ${currentUser && currentUser.totalSpent >= 5000 ? 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-lg shadow-amber-500/20' : 'bg-slate-700 text-slate-400 cursor-not-allowed'}`}>
-                    {currentUser && currentUser.totalSpent >= 5000 ? 'ক্লেম করুন (Claim Giveaway)' : '৳৫,০০০ কেনাকাটা পূর্ণ করুন'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'orders' && (
-              <div class="space-y-4">
-                <h2 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-2 flex items-center gap-2">
-                  <i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> হিস্ট্রি (History)
-                </h2>
-                
-                <div class="space-y-2">
-                  <h3 class="text-xs font-bold text-slate-400">অর্ডারসমূহ:</h3>
-                  {orders.filter(o => currentUser && o.userPhone === currentUser.phone).length === 0 ? <p class="text-xs text-slate-500 italic bg-slate-800/40 p-3 rounded-xl">কোনো অর্ডার পাওয়া যায়নি</p> : (
-                    orders.filter(o => currentUser && o.userPhone === currentUser.phone).map(o => (
-                      <div key={o.id} class="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 text-xs flex justify-between items-center">
-                        <div>
-                          <div class="font-bold text-slate-100">{o.productName}</div>
-                          <div class="text-slate-400 text-[10px]">UID: {o.playerUid} | Qty: {o.quantity}</div>
-                          <div class="text-slate-500 text-[9px] mt-0.5">{o.date}</div>
-                        </div>
-                        <div class="text-right">
-                          <div class="font-bold text-emerald-400">৳{o.totalPrice}</div>
-                          <span class={`px-2 py-0.5 rounded-full text-[9px] font-bold inline-block mt-1 ${o.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
-                            {o.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <div class="space-y-2 pt-2">
-                  <h3 class="text-xs font-bold text-slate-400">ডিপোজিটসমূহ:</h3>
-                  {deposits.filter(d => currentUser && d.userPhone === currentUser.phone).length === 0 ? <p class="text-xs text-slate-500 italic bg-slate-800/40 p-3 rounded-xl">কোনো ডিপোজিট পাওয়া যায়নি</p> : (
-                    deposits.filter(d => currentUser && d.userPhone === currentUser.phone).map(d => (
-                      <div key={d.id} class="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 text-xs flex justify-between items-center">
-                        <div>
-                          <div class="font-bold text-slate-100">ডিপোজিট ({d.method.toUpperCase()})</div>
-                          <div class="text-slate-400 text-[10px]">TrxID: {d.trxId}</div>
-                          <div class="text-slate-500 text-[9px] mt-0.5">{d.date}</div>
-                        </div>
-                        <div class="text-right">
-                          <div class="font-bold text-emerald-400">৳{d.amount}</div>
-                          <span class={`px-2 py-0.5 rounded-full text-[9px] font-bold inline-block mt-1 ${d.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'}`}>
-                            {d.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'account' && (
-              <div class="space-y-4">
-                <h2 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-2">আমার প্রোফাইল</h2>
-                {currentUser ? (
-                  <div class="space-y-4">
-                    <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/60 space-y-3 text-xs">
-                      <div class="flex justify-between border-b border-slate-700/50 pb-2">
-                        <span class="text-slate-400">নাম:</span>
-                        <span class="font-bold text-white">{currentUser.name}</span>
-                      </div>
-                      <div class="flex justify-between border-b border-slate-700/50 pb-2">
-                        <span class="text-slate-400">ফোন নম্বর:</span>
-                        <span class="font-bold text-white">{currentUser.phone}</span>
-                      </div>
-                      <div class="flex justify-between border-b border-slate-700/50 pb-2">
-                        <span class="text-slate-400">ব্যালেন্স:</span>
-                        <span class="font-bold text-emerald-400">৳{currentUser.balance}</span>
-                      </div>
-                      <button onClick={handleLogout} class="w-full bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 font-bold p-2.5 rounded-xl transition">
-                        লগআউট করুন
-                      </button>
+                return (
+                  <div key={rank.id} className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-sm">{rank.name}</h4>
+                      <p className="text-xs text-gray-500">{rank.range}</p>
+                      <p className="text-xs text-indigo-600 font-medium mt-1">🎁 Gift: {rank.gift}</p>
                     </div>
-
-                    {/* Support Center Box inside Account */}
-                    <div class="bg-gradient-to-r from-emerald-950/40 to-slate-800 p-4 rounded-2xl border border-emerald-500/30 space-y-2">
-                      <div class="font-bold text-xs text-emerald-400 flex items-center gap-1.5">
-                        <i class="fa-solid fa-headset text-sm"></i> হেল্প & সাপোর্ট সেন্টার
-                      </div>
-                      <p class="text-[11px] text-slate-300">যেকোনো সমস্যা, ডেলিভারি লেট বা মেসেজের জবাব দ্রুত পেতে আমাদের অফিসিয়াল হোয়াটসঅ্যাপে নক দিন।</p>
-                      <button onClick={openWhatsAppSupport} class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-3 rounded-xl text-xs transition flex items-center justify-center gap-2">
-                        <i class="fa-brands fa-whatsapp text-sm"></i> হোয়াটসঅ্যাপ সাপোর্ট নক করুন
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/60 space-y-4">
-                    <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-700/50">
-                      <button onClick={() => setAuthMode('login')} class={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${authMode === 'login' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400'}`}>লগইন</button>
-                      <button onClick={() => setAuthMode('register')} class={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${authMode === 'register' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400'}`}>রেজিস্টার</button>
-                    </div>
-
-                    <form onSubmit={handleAuth} class="space-y-3 text-xs">
-                      {authMode === 'register' && (
-                        <div>
-                          <label class="block text-slate-400 mb-1">আপনার নাম</label>
-                          <input type="text" placeholder="Name" value={authName} onChange={e => setAuthName(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500"/>
-                        </div>
+                    <div>
+                      {isCurrent ? (
+                        <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">Current</span>
+                      ) : isUnlocked ? (
+                        <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">Unlocked</span>
+                      ) : (
+                        <span className="bg-gray-100 text-gray-500 text-xs font-bold px-3 py-1 rounded-full">Locked</span>
                       )}
-                      <div>
-                        <label class="block text-slate-400 mb-1">ফোন নম্বর</label>
-                        <input type="text" placeholder="017xxxxxxxx" value={authPhone} onChange={e => setAuthPhone(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500"/>
-                      </div>
-                      <div>
-                        <label class="block text-slate-400 mb-1">পাসওয়ার্ড</label>
-                        <input type="password" placeholder="Password" value={authPass} onChange={e => setAuthPass(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500"/>
-                      </div>
-                      <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold p-3 rounded-xl transition shadow-lg shadow-emerald-500/20">
-                        {authMode === 'login' ? 'লগইন করুন' : 'অ্যাকোউন্ট তৈরি করুন'}
-                      </button>
-                    </form>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === 'admin' && (
-              <div class="space-y-4">
-                {!isAdminLoggedIn ? (
-                  <form onSubmit={handleAdminLogin} class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/60 space-y-3 text-xs">
-                    <h2 class="text-xs font-bold text-emerald-400 flex items-center gap-1.5"><i class="fa-solid fa-lock"></i> Admin Panel</h2>
-                    <input type="password" placeholder="Admin PIN" value={adminPinInput} onChange={e => setAdminPinInput(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white"/>
-                    <button type="submit" class="w-full bg-emerald-500 text-slate-950 font-bold p-2.5 rounded-xl">লগইন করুন</button>
-                  </form>
-                ) : (
-                  <div class="space-y-3">
-                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-                      <h2 class="text-xs font-bold text-emerald-400">⚙️ Admin Dashboard</h2>
-                      <button onClick={() => setIsAdminLoggedIn(false)} class="text-[9px] bg-rose-600 px-2 py-0.5 rounded text-white font-bold">Exit Admin</button>
                     </div>
-
-                    <div class="flex gap-1 bg-slate-800/80 p-1 rounded-xl text-[10px] font-bold border border-slate-700/50">
-                      <button onClick={() => setAdminSubTab('orders')} class={`flex-1 py-1 rounded-lg transition ${adminSubTab === 'orders' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400'}`}>অর্ডার ({orders.length})</button>
-                      <button onClick={() => setAdminSubTab('deposits')} class={`flex-1 py-1 rounded-lg transition ${adminSubTab === 'deposits' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400'}`}>ডিপোজিট ({deposits.filter(d=>d.status==='Pending').length})</button>
-                      <button onClick={() => setAdminSubTab('settings')} class={`flex-1 py-1 rounded-lg transition ${adminSubTab === 'settings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400'}`}>সেটিংস</button>
-                    </div>
-
-                    {adminSubTab === 'orders' && (
-                      <div class="space-y-2">
-                        {orders.map(o => (
-                          <div key={o.id} class={`p-3 rounded-xl border text-xs ${o.isGiveaway ? 'bg-purple-950/40 border-purple-500/50' : 'bg-slate-800/80 border-slate-700/60'}`}>
-                            {o.isGiveaway && <span class="bg-purple-600 text-white text-[8px] px-1.5 py-0.5 rounded font-bold uppercase mb-1 inline-block">🎁 গিভওয়ে</span>}
-                            <div class="font-bold text-white">{o.productName}</div>
-                            <div class="text-[10px] text-slate-300">UID: <span class="text-emerald-400 font-mono select-all">{o.playerUid}</span></div>
-                            <div class="text-[10px] text-slate-400">ফোন: {o.userPhone} | Qty: {o.quantity}</div>
-                            <div class="text-[10px] text-slate-400">পেমেন্ট: {o.paymentMethod} (TrxID: {o.trxId})</div>
-                            <div class="mt-2 flex justify-between items-center">
-                              <span class={`text-[9px] font-bold px-2 py-0.5 rounded-full ${o.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{o.status}</span>
-                              <div class="flex gap-1">
-                                <button onClick={() => handleUpdateOrderStatus(o.id, 'Completed')} class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px]">Complete</button>
-                                <button onClick={() => handleUpdateOrderStatus(o.id, 'Cancelled')} class="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px]">Cancel</button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {adminSubTab === 'deposits' && (
-                      <div class="space-y-2">
-                        {deposits.map(d => (
-                          <div key={d.id} class="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 text-xs">
-                            <div class="flex justify-between font-bold text-white">
-                              <span>{d.userName} ({d.userPhone})</span>
-                              <span class="text-emerald-400">৳{d.amount}</span>
-                            </div>
-                            <div class="text-[10px] text-slate-300">মেথড: {d.method.toUpperCase()} | সেন্ডার: {d.sender}</div>
-                            <div class="text-[10px] text-slate-300">TrxID: <span class="font-mono text-emerald-400 select-all">{d.trxId}</span></div>
-                            <div class="mt-2 flex justify-between items-center">
-                              <span class="text-[9px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">{d.status}</span>
-                              {d.status === 'Pending' && (
-                                <div class="flex gap-1">
-                                  <button onClick={() => handleApproveDeposit(d)} class="bg-emerald-600 text-white px-2 py-0.5 rounded text-[10px]">Approve (+৳{d.amount})</button>
-                                  <button onClick={() => handleRejectDeposit(d.id)} class="bg-rose-600 text-white px-2 py-0.5 rounded text-[10px]">Reject</button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {adminSubTab === 'settings' && (
-                      <div class="bg-slate-800/80 p-4 rounded-2xl border border-slate-700/60 space-y-3 text-xs">
-                        <h3 class="font-bold text-white">সেটিংস পরিবর্তন</h3>
-                        <div>
-                          <label class="block text-slate-400 mb-1">bKash নম্বর</label>
-                          <input type="text" value={settings.bkash} onChange={e => setSettings({ ...settings, bkash: e.target.value })} class="w-full p-2 bg-slate-900 border border-slate-700 rounded-xl text-white"/>
-                        </div>
-                        <div>
-                          <label class="block text-slate-400 mb-1">Nagad নম্বর</label>
-                          <input type="text" value={settings.nagad} onChange={e => setSettings({ ...settings, nagad: e.target.value })} class="w-full p-2 bg-slate-900 border border-slate-700 rounded-xl text-white"/>
-                        </div>
-                        <div>
-                          <label class="block text-slate-400 mb-1">WhatsApp হেল্পলাইন নম্বর</label>
-                          <input type="text" value={settings.whatsapp} onChange={e => setSettings({ ...settings, whatsapp: e.target.value })} class="w-full p-2 bg-slate-900 border border-slate-700 rounded-xl text-white"/>
-                        </div>
-                        <div>
-                          <label class="block text-slate-400 mb-1">Admin PIN</label>
-                          <input type="text" value={settings.adminPin} onChange={e => setSettings({ ...settings, adminPin: e.target.value })} class="w-full p-2 bg-slate-900 border border-slate-700 rounded-xl text-white"/>
-                        </div>
-                      </div>
-                    )}
                   </div>
-                )}
-              </div>
-            )}
-          </main>
-
-          {/* Floating WhatsApp Support Button */}
-          <button 
-            onClick={openWhatsAppSupport} 
-            class="fixed bottom-16 right-4 z-40 bg-emerald-500 hover:bg-emerald-400 text-slate-950 p-3 rounded-full shadow-lg shadow-emerald-500/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95 border border-emerald-300"
-            title="হোয়াটসঅ্যাপ সাপোর্ট"
-          >
-            <i class="fa-brands fa-whatsapp text-2xl"></i>
-          </button>
-
-          {/* Modal for Order */}
-          {selectedProduct && (
-            <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div class="bg-slate-800 border border-slate-700/80 p-4 rounded-2xl w-full max-w-sm space-y-3 text-xs shadow-2xl">
-                <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-                  <h3 class="font-bold text-sm text-emerald-400">{selectedProduct.name}</h3>
-                  <button onClick={() => setSelectedProduct(null)} class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-                </div>
-
-                <div>
-                  <label class="block text-slate-400 mb-1">প্লেয়ার UID</label>
-                  <input type="text" placeholder="Player UID দিন" value={playerUid} onChange={e => setPlayerUid(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500"/>
-                </div>
-
-                <div>
-                  <label class="block text-slate-400 mb-1">পরিমাণ (Quantity)</label>
-                  <select value={quantity} onChange={e => setQuantity(Number(e.target.value))} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(q => (
-                      <option key={q} value={q}>{q}টি (মোট: ৳{selectedProduct.price * q})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label class="block text-slate-400 mb-1">পেমেন্ট মেথড</label>
-                  <select value={paymentType} onChange={e => setPaymentType(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500">
-                    <option value="balance">Account Balance (বর্তমান: ৳{currentUser ? currentUser.balance : 0})</option>
-                    <option value="trx">Direct bKash/Nagad TrxID</option>
-                  </select>
-                </div>
-
-                {paymentType === 'trx' && (
-                  <div>
-                    <label class="block text-slate-400 mb-1">TrxID</label>
-                    <input type="text" placeholder="TrxID দিন" value={trxId} onChange={e => setTrxId(e.target.value)} class="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-emerald-500"/>
-                  </div>
-                )}
-
-                <div class="bg-slate-900/80 p-3 rounded-xl flex justify-between items-center border border-slate-700/50">
-                  <span class="text-slate-400">মোট মূল্য:</span>
-                  <span class="text-base font-extrabold text-emerald-400">৳{selectedProduct.price * quantity}</span>
-                </div>
-
-                <button onClick={handleOrderSubmit} class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold p-3 rounded-xl transition shadow-lg shadow-emerald-500/20">
-                  অর্ডার নিশ্চিত করুন
-                </button>
-              </div>
+                );
+              })}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Bottom Navigation */}
-          <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-slate-950/90 backdrop-blur-md border-t border-slate-800/80 flex justify-around p-2 text-[10px] z-30">
-            <button onClick={() => setActiveTab('topup')} class={`flex flex-col items-center gap-1 transition ${activeTab === 'topup' ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
-              <i class="fa-solid fa-gamepad text-sm"></i> TopUp
-            </button>
-            <button onClick={() => setActiveTab('deposit')} class={`flex flex-col items-center gap-1 transition ${activeTab === 'deposit' ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
-              <i class="fa-solid fa-wallet text-sm"></i> Deposit
-            </button>
-            <button onClick={() => setActiveTab('giveaway')} class={`flex flex-col items-center gap-1 transition ${activeTab === 'giveaway' ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
-              <i class="fa-solid fa-gift text-sm"></i> Giveaway
-            </button>
-            <button onClick={() => setActiveTab('orders')} class={`flex flex-col items-center gap-1 transition ${activeTab === 'orders' ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
-              <i class="fa-solid fa-list-check text-sm"></i> History
-            </button>
-            <button onClick={() => setActiveTab('account')} class={`flex flex-col items-center gap-1 transition ${activeTab === 'account' ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
-              <i class="fa-solid fa-user text-sm"></i> Account
-            </button>
-            <button onClick={() => setActiveTab('admin')} class={`flex flex-col items-center gap-1 transition ${activeTab === 'admin' ? 'text-emerald-400 font-bold' : 'text-slate-400'}`}>
-              <i class="fa-solid fa-user-shield text-sm"></i> Admin
-            </button>
-          </nav>
-        </div>
-      );
-    }
+        {/* Orders Tab */}
+        {activeTab === 'orders' && (
+          <div>
+            <h3 className="font-bold text-lg mb-4 text-gray-800">My Orders History</h3>
+            {orders.length === 0 ? (
+              <p className="text-gray-500 text-sm text-center py-10">কোনো অর্ডার করা হয়নি!</p>
+            ) : (
+              <div className="space-y-3">
+                {orders.map((ord) => (
+                  <div key={ord.id} className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm text-sm">
+                    <div className="flex justify-between font-bold text-gray-800 mb-1">
+                      <span>{ord.packageName}</span>
+                      <span className="text-indigo-600">৳ {ord.price}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Phone: {ord.phone}</p>
+                    <p className="text-xs text-gray-500">TrxID: {ord.trxId}</p>
+                    <p className="text-[10px] text-gray-400 mt-2">{ord.date}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
-</
+        {/* Admin Panel Tab */}
+        {activeTab === 'admin' && (
+          <div>
+            {!isAdminLoggedIn ? (
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mt-6">
+                <h3 className="font-bold text-lg mb-4 text-center">Admin Login</h3>
+                <form onSubmit={handleAdminLogin} className="space-y-3">
+                  <input 
+                    type="password" 
+                    placeholder="Enter Password (admin123)" 
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg p-2.5 text-sm"
+                    required
+                  />
+                  <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg text-sm">
+                    Login
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center bg-indigo-50 p-3 rounded-xl">
+                  <span className="font-bold text-indigo-700 text-sm">Admin Dashboard</span>
+                  <button onClick={() => setIsAdminLoggedIn(false)} className="text-xs bg-red-500 text-white px-3 py-1 rounded-lg">Logout</button>
+                </div>
+
+                {/* Manage Ranks & Giveaway Gifts */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                  <h4 className="font-bold text-sm text-gray-800 mb-3">Manage Rank Gifts (Giveaway)</h4>
+                  {ranks.map((r, i) => (
+                    <div key={r.id} className="mb-3 pb-3 border-b border-gray-100 last:border-none">
+                      <span className="text-xs font-bold text-indigo-600">{r.name}</span>
+                      <input 
+                        type="text" 
+                        value={r.gift} 
+                        onChange={(e) => {
+                          const updated = [...ranks];
+                          updated[i].gift = e.target.value;
+                          setRanks(updated);
+                        }}
+                        className="w-full mt-1 border border-gray-300 rounded p-1.5 text-xs"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Manage Popup Notice */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                  <h4 className="font-bold text-sm text-gray-800 mb-3">Manage Popup Notice</h4>
+                  <div className="space-y-2">
+                    <input 
+                      type="text" 
+                      value={popupNotice.title}
+                      onChange={(e) => setPopupNotice({...popupNotice, title: e.target.value})}
+                      className="w-full border border-gray-300 rounded p-1.5 text-xs"
+                      placeholder="Title"
+                    />
+                    <textarea 
+                      value={popupNotice.description}
+                      onChange={(e) => setPopupNotice({...popupNotice, description: e.target.value})}
+                      className="w-full border border-gray-300 rounded p-1.5 text-xs"
+                      placeholder="Description"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+      </main>
+
+      {/* Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3 z-40 max-w-md mx-auto">
+        <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center text-xs ${activeTab === 'home' ? 'text-indigo-600 font-bold' : 'text-gray-500'}`}>
+          <span className="text-base">🏠</span>
+          <span>Home</span>
+        </button>
+        <button onClick={() => setActiveTab('ranks')} className={`flex flex-col items-center text-xs ${activeTab === 'ranks' ? 'text-indigo-600 font-bold' : 'text-gray-500'}`}>
+          <span className="text-base">🏆</span>
+          <span>Ranks/Giveaway</span>
+        </button>
+        <button onClick={() => setActiveTab('orders')} className={`flex flex-col items-center text-xs ${activeTab === 'orders' ? 'text-indigo-600 font-bold' : 'text-gray-500'}`}>
+          <span className="text-base">📦</span>
+          <span>My Orders</span>
+        </button>
+      </nav>
+
+    </div>
+  );
+}

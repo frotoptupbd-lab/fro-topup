@@ -1,380 +1,2286 @@
-import React, { useState, useEffect } from 'react';
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPUP BUZZ</title>
 
-// Default Packages Data
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<style>
+body{
+  margin:0;
+  background:#f3f4f6;
+  font-family:Arial,sans-serif;
+}
+*{
+  box-sizing:border-box;
+}
+::-webkit-scrollbar{
+  width:4px;
+}
+::-webkit-scrollbar-thumb{
+  background:#6366f1;
+  border-radius:10px;
+}
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+</style>
+</head>
+
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+const {useState,useEffect} = React;
+
+
+/* =========================================================
+   ADMIN
+========================================================= */
+
+const ADMIN_PASSWORD = "264891";
+
+
+/* =========================================================
+   DEFAULT SETTINGS
+========================================================= */
+
+const DEFAULT_SETTINGS = {
+  shopName:"TOPUP BUZZ",
+  paymentNumber:"01994835545",
+  whatsappNumber:"8801994835545",
+  telegramUsername:"",
+  notice:"কম মূল্যে দ্রুত ও সহজে TopUp করুন।"
+};
+
+
+/* =========================================================
+   DEFAULT PACKAGES
+========================================================= */
+
 const INITIAL_PACKAGES = [
-  { id: 1, name: '25 Diamonds', price: 26, category: 'uid' },
-  { id: 2, name: '50 Diamonds', price: 39, category: 'uid' },
-  { id: 3, name: '115 Diamonds', price: 95, category: 'uid' },
-  { id: 4, name: '240 Diamonds', price: 169, category: 'uid' },
-  { id: 5, name: '355 Diamonds', price: 249, category: 'uid' },
-  { id: 6, name: '505 Diamonds', price: 345, category: 'uid' },
-  { id: 7, name: '610 Diamonds', price: 410, category: 'uid' },
-  { id: 8, name: '850 Diamonds', price: 565, category: 'uid' },
-  { id: 9, name: '1090 Diamonds', price: 780, category: 'uid' },
-  { id: 10, name: '1240 Diamonds', price: 850, category: 'uid' },
-  { id: 11, name: '1850 Diamonds', price: 1165, category: 'uid' },
-  { id: 12, name: '2530 Diamonds', price: 1620, category: 'uid' },
-  { id: 13, name: '5060 Diamonds', price: 3210, category: 'uid' },
-  { id: 14, name: '10120 Diamonds', price: 6480, category: 'uid' },
-  { id: 15, name: 'Weekly Lite', price: 48, category: 'weekly' },
-  { id: 16, name: '2x Weekly Lite', price: 96, category: 'weekly' },
-  { id: 17, name: '5x Weekly Lite', price: 240, category: 'weekly' },
-  { id: 18, name: '10x Weekly Lite', price: 480, category: 'weekly' },
-  { id: 19, name: '20x Weekly Lite', price: 960, category: 'weekly' },
-  { id: 20, name: 'Weekly Membership', price: 165, category: 'weekly' },
-  { id: 21, name: 'Monthly Membership', price: 810, category: 'monthly' },
+
+  /* DIAMONDS */
+
+  {id:1,name:"25 Diamonds",price:26,category:"diamond",active:true},
+  {id:2,name:"50 Diamonds",price:39,category:"diamond",active:true},
+  {id:3,name:"115 Diamonds",price:95,category:"diamond",active:true},
+  {id:4,name:"240 Diamonds",price:169,category:"diamond",active:true},
+  {id:5,name:"355 Diamonds",price:249,category:"diamond",active:true},
+  {id:6,name:"505 Diamonds",price:345,category:"diamond",active:true},
+  {id:7,name:"610 Diamonds",price:410,category:"diamond",active:true},
+  {id:8,name:"850 Diamonds",price:565,category:"diamond",active:true},
+  {id:9,name:"1090 Diamonds",price:780,category:"diamond",active:true},
+  {id:10,name:"1240 Diamonds",price:850,category:"diamond",active:true},
+  {id:11,name:"1850 Diamonds",price:1165,category:"diamond",active:true},
+  {id:12,name:"2530 Diamonds",price:1620,category:"diamond",active:true},
+  {id:13,name:"5060 Diamonds",price:3210,category:"diamond",active:true},
+  {id:14,name:"10120 Diamonds",price:6480,category:"diamond",active:true},
+
+  /* WEEKLY LITE */
+
+  {id:15,name:"Weekly Lite",price:48,category:"weekly_lite",active:true},
+  {id:16,name:"2x Weekly Lite",price:96,category:"weekly_lite",active:true},
+  {id:17,name:"5x Weekly Lite",price:240,category:"weekly_lite",active:true},
+  {id:18,name:"10x Weekly Lite",price:480,category:"weekly_lite",active:true},
+  {id:19,name:"20x Weekly Lite",price:960,category:"weekly_lite",active:true},
+
+  /* WEEKLY */
+
+  {id:20,name:"Weekly Membership",price:165,category:"weekly",active:true},
+
+  /* MONTHLY */
+
+  {id:21,name:"Monthly Membership",price:810,category:"monthly",active:true}
 ];
 
-// Initial Ranks / Giveaway Tiers (Image 9 Style)
+
+/* =========================================================
+   REWARDS
+========================================================= */
+
 const INITIAL_RANKS = [
-  { id: 1, name: 'Bronze', range: '0 - 100 Tk', gift: 'Basic Avatar & 5 Diamonds', minSpend: 0 },
-  { id: 2, name: 'Silver', range: '101 - 1,000 Tk', gift: 'Custom Banner & 20 Diamonds', minSpend: 101 },
-  { id: 3, name: 'Gold', range: '1,001 - 5,000 Tk', gift: 'Exclusive Gun Skin Box', minSpend: 1001 },
-  { id: 4, name: 'Platinum', range: '5,001 - 10,000 Tk', gift: 'Weekly Membership Free', minSpend: 5001 },
-  { id: 5, name: 'Diamond', range: '10,001 - 25,000 Tk', gift: 'Monthly Membership Discount Voucher', minSpend: 10001 },
-  { id: 6, name: 'Heroic', range: '25,001 - 50,000 Tk', gift: 'Special Elite Pass Bundle', minSpend: 25001 },
-  { id: 7, name: 'Master', range: '50,001 - 100,000 Tk', gift: '1000 Free Diamonds Giveaway', minSpend: 50001 },
-  { id: 8, name: 'Grand Master', range: '100,000+ Tk', gift: 'VIP Permanent Emote & Custom Reward', minSpend: 100000 },
+
+  {
+    id:1,
+    name:"Heroic",
+    requirement:1000,
+    gift:"50 Diamonds",
+    status:true
+  },
+
+  {
+    id:2,
+    name:"Platinum",
+    requirement:5000,
+    gift:"100 Diamonds",
+    status:true
+  },
+
+  {
+    id:3,
+    name:"Master",
+    requirement:10000,
+    gift:"Weekly Lite",
+    status:true
+  }
+
 ];
 
-export default function App() {
-  // State Management with LocalStorage
-  const [packages, setPackages] = useState(() => {
-    const saved = localStorage.getItem('fro_packages');
-    return saved ? JSON.parse(saved) : INITIAL_PACKAGES;
-  });
 
-  const [ranks, setRanks] = useState(() => {
-    const saved = localStorage.getItem('fro_ranks');
-    return saved ? JSON.parse(saved) : INITIAL_RANKS;
-  });
+/* =========================================================
+   APP
+========================================================= */
 
-  const [orders, setOrders] = useState(() => {
-    const saved = localStorage.getItem('fro_orders');
-    return saved ? JSON.parse(saved) : [];
-  });
+function App(){
 
-  const [showPopup, setShowPopup] = useState(true);
-  const [activeTab, setActiveTab] = useState('home'); // home, ranks, orders, admin
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
-  
-  // Checkout Form States
-  const [selectedPkg, setSelectedPkg] = useState(null);
-  const [phone, setPhone] = useState('');
-  const [trxId, setTrxId] = useState('');
-  const [userSpend, setUserSpend] = useState(450); // User spend example for rank calculation
+  /* ---------------- DATA ---------------- */
 
-  // Admin Notice Settings State
-  const [popupNotice, setPopupNotice] = useState({
-    title: 'আমাদের টপআপ চালু আছে ✅',
-    description: 'কিভাবে টপআপ করবেন সেটি জানতে এখানে ক্লিক করে ভিডিওটি দেখুন',
-    videoLink: 'https://youtube.com',
-  });
+  const [packages,setPackages] = useState(
+    ()=>JSON.parse(
+      localStorage.getItem("tb_packages") ||
+      JSON.stringify(INITIAL_PACKAGES)
+    )
+  );
 
-  useEffect(() => {
-    localStorage.setItem('fro_packages', JSON.stringify(packages));
-    localStorage.setItem('fro_ranks', JSON.stringify(ranks));
-    localStorage.setItem('fro_orders', JSON.stringify(orders));
-  }, [packages, ranks, orders]);
+  const [users,setUsers] = useState(
+    ()=>JSON.parse(
+      localStorage.getItem("tb_users") || "[]"
+    )
+  );
 
-  // Handle WhatsApp Checkout Order Submission
-  const handleCheckout = (e) => {
-    e.preventDefault();
-    if (!selectedPkg || !phone || !trxId) {
-      alert('দয়া করে সব তথ্য সঠিকভাবে পূরণ করুন!');
+  const [orders,setOrders] = useState(
+    ()=>JSON.parse(
+      localStorage.getItem("tb_orders") || "[]"
+    )
+  );
+
+  const [deposits,setDeposits] = useState(
+    ()=>JSON.parse(
+      localStorage.getItem("tb_deposits") || "[]"
+    )
+  );
+
+  const [ranks,setRanks] = useState(
+    ()=>JSON.parse(
+      localStorage.getItem("tb_ranks") ||
+      JSON.stringify(INITIAL_RANKS)
+    )
+  );
+
+  const [settings,setSettings] = useState(
+    ()=>JSON.parse(
+      localStorage.getItem("tb_settings") ||
+      JSON.stringify(DEFAULT_SETTINGS)
+    )
+  );
+
+  const [currentUser,setCurrentUser] = useState(
+    ()=>JSON.parse(
+      localStorage.getItem("tb_current_user") || "null"
+    )
+  );
+
+
+  /* ---------------- UI ---------------- */
+
+  const [tab,setTab] = useState("home");
+
+  const [adminLogged,setAdminLogged] = useState(false);
+
+  const [adminPassword,setAdminPassword] = useState("");
+
+  const [authMode,setAuthMode] = useState("login");
+
+  const [phone,setPhone] = useState("");
+
+  const [password,setPassword] = useState("");
+
+  const [confirmPassword,setConfirmPassword] = useState("");
+
+  const [selectedPkg,setSelectedPkg] = useState(null);
+
+  const [quantity,setQuantity] = useState(1);
+
+  const [uid,setUid] = useState("");
+
+  const [depositAmount,setDepositAmount] = useState("");
+
+  const [depositMethod,setDepositMethod] = useState("");
+
+  const [depositNumber,setDepositNumber] = useState("");
+
+  const [depositTrx,setDepositTrx] = useState("");
+
+  const [category,setCategory] = useState("diamond");
+
+  const [adminSection,setAdminSection] = useState("dashboard");
+
+  const [customerSearch,setCustomerSearch] = useState("");
+
+  const [balanceAmount,setBalanceAmount] = useState("");
+
+  const [newPackageName,setNewPackageName] = useState("");
+
+  const [newPackagePrice,setNewPackagePrice] = useState("");
+
+  const [newPackageCategory,setNewPackageCategory] =
+    useState("diamond");
+
+
+  /* =====================================================
+     SAVE DATA
+  ===================================================== */
+
+  useEffect(()=>{
+    localStorage.setItem(
+      "tb_packages",
+      JSON.stringify(packages)
+    );
+  },[packages]);
+
+  useEffect(()=>{
+    localStorage.setItem(
+      "tb_users",
+      JSON.stringify(users)
+    );
+  },[users]);
+
+  useEffect(()=>{
+    localStorage.setItem(
+      "tb_orders",
+      JSON.stringify(orders)
+    );
+  },[orders]);
+
+  useEffect(()=>{
+    localStorage.setItem(
+      "tb_deposits",
+      JSON.stringify(deposits)
+    );
+  },[deposits]);
+
+  useEffect(()=>{
+    localStorage.setItem(
+      "tb_ranks",
+      JSON.stringify(ranks)
+    );
+  },[ranks]);
+
+  useEffect(()=>{
+    localStorage.setItem(
+      "tb_settings",
+      JSON.stringify(settings)
+    );
+  },[settings]);
+
+  useEffect(()=>{
+    if(currentUser){
+      localStorage.setItem(
+        "tb_current_user",
+        JSON.stringify(currentUser)
+      );
+    }else{
+      localStorage.removeItem("tb_current_user");
+    }
+  },[currentUser]);
+
+
+  /* =====================================================
+     AUTH
+  ===================================================== */
+
+  function register(){
+
+    if(!/^01[0-9]{9}$/.test(phone)){
+      alert("সঠিক ১১ সংখ্যার ফোন নম্বর দিন");
       return;
     }
 
-    const newOrder = {
-      id: Date.now(),
-      packageName: selectedPkg.name,
-      price: selectedPkg.price,
+    if(password.length<6){
+      alert("Password কমপক্ষে ৬ অক্ষরের হতে হবে");
+      return;
+    }
+
+    if(password!==confirmPassword){
+      alert("Password মিলছে না");
+      return;
+    }
+
+    if(users.some(u=>u.phone===phone)){
+      alert("এই নম্বর দিয়ে আগে থেকেই account আছে");
+      return;
+    }
+
+    const user={
+      id:Date.now(),
       phone,
-      trxId,
-      date: new Date().toLocaleString(),
+      password,
+      balance:0,
+      totalSpend:0,
+      createdAt:new Date().toLocaleString()
     };
 
-    setOrders([newOrder, ...orders]);
-    setUserSpend(prev => prev + selectedPkg.price);
+    const updated=[...users,user];
 
-    // WhatsApp Message Generation (আপনার হোয়াটসঅ্যাপ নম্বর এখানে দিন)
-    const adminWhatsAppNumber = '8801700000000'; 
-    const message = `*New TopUp Order*%0A- Package: ${selectedPkg.name}%0A- Price: BDT ${selectedPkg.price}%0A- Phone/UID: ${phone}%0A- TrxID: ${trxId}`;
-    
-    window.open(`https://wa.me/${adminWhatsAppNumber}?text=${message}`, '_blank');
-    
-    alert('অর্ডার সফলভাবে সাবমিট হয়েছে এবং হোয়াটসঅ্যাপে রিডাইরেক্ট করা হচ্ছে!');
-    setSelectedPkg(null);
-    setPhone('');
-    setTrxId('');
-  };
+    setUsers(updated);
+    setCurrentUser(user);
 
-  // Admin Login Check
-  const handleAdminLogin = (e) => {
-    e.preventDefault();
-    if (adminPassword === 'admin123') {
-      setIsAdminLoggedIn(true);
-    } else {
-      alert('ভুল পাসওয়ার্ড!');
+    setPhone("");
+    setPassword("");
+    setConfirmPassword("");
+
+  }
+
+
+  function login(){
+
+    const user=users.find(
+      u=>u.phone===phone &&
+         u.password===password
+    );
+
+    if(!user){
+      alert("Phone অথবা Password ভুল");
+      return;
     }
-  };
 
-  return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 pb-24 font-sans">
-      
-      {/* Top Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-40 flex justify-between items-center px-4 py-3">
-        <div className="flex items-center space-x-2">
-          <h1 className="text-xl font-bold text-indigo-700 tracking-wide">TOPUP BUZZ</h1>
-        </div>
-        <div className="flex items-center space-x-3">
-          <div className="bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full text-sm font-semibold text-indigo-700">
-            ৳ 0টাকা
+    setCurrentUser(user);
+
+    setPhone("");
+    setPassword("");
+
+  }
+
+
+  function logout(){
+
+    setCurrentUser(null);
+    setAdminLogged(false);
+    setTab("home");
+
+  }
+
+
+  function forgotPassword(){
+
+    const user=users.find(
+      u=>u.phone===phone
+    );
+
+    if(!user){
+      alert("এই ফোন নম্বরের account পাওয়া যায়নি");
+      return;
+    }
+
+    const newPass=prompt(
+      "নতুন Password দিন (কমপক্ষে ৬ অক্ষর):"
+    );
+
+    if(!newPass || newPass.length<6){
+      alert("Password কমপক্ষে ৬ অক্ষরের হতে হবে");
+      return;
+    }
+
+    const updated=users.map(u=>
+      u.id===user.id
+      ? {...u,password:newPass}
+      : u
+    );
+
+    setUsers(updated);
+
+    alert("Password পরিবর্তন হয়েছে। এখন Login করুন।");
+
+  }
+
+
+  /* =====================================================
+     PACKAGE
+  ===================================================== */
+
+  function choosePackage(pkg){
+
+    setSelectedPkg(pkg);
+    setQuantity(1);
+
+  }
+
+
+  const totalPrice =
+    selectedPkg
+    ? selectedPkg.price * quantity
+    : 0;
+
+
+  /* =====================================================
+     ORDER
+  ===================================================== */
+
+  function submitOrder(){
+
+    if(!currentUser){
+      alert("আগে Login করুন");
+      return;
+    }
+
+    if(!selectedPkg){
+      alert("Package নির্বাচন করুন");
+      return;
+    }
+
+    if(!uid.trim()){
+      alert("Free Fire UID দিন");
+      return;
+    }
+
+    if(currentUser.balance<totalPrice){
+
+      alert(
+        "আপনার balance যথেষ্ট নেই।\n"+
+        "আগে Deposit করুন।"
+      );
+
+      return;
+    }
+
+
+    const order={
+      id:Date.now(),
+
+      userId:currentUser.id,
+
+      userPhone:currentUser.phone,
+
+      packageName:selectedPkg.name,
+
+      category:selectedPkg.category,
+
+      quantity,
+
+      price:selectedPkg.price,
+
+      total:totalPrice,
+
+      uid:uid.trim(),
+
+      status:"Pending",
+
+      date:new Date().toLocaleString()
+    };
+
+
+    const updatedUser={
+      ...currentUser,
+
+      balance:currentUser.balance-totalPrice,
+
+      totalSpend:
+        (currentUser.totalSpend||0)+totalPrice
+    };
+
+
+    setOrders([order,...orders]);
+
+    setUsers(
+      users.map(u=>
+        u.id===updatedUser.id
+        ? updatedUser
+        : u
+      )
+    );
+
+    setCurrentUser(updatedUser);
+
+    setSelectedPkg(null);
+    setQuantity(1);
+    setUid("");
+
+    alert(
+      "অর্ডার সফলভাবে নেওয়া হয়েছে!\n"+
+      "Status: Pending"
+    );
+
+  }
+
+
+  /* =====================================================
+     DEPOSIT
+  ===================================================== */
+
+  function submitDeposit(){
+
+    if(!currentUser){
+      alert("আগে Login করুন");
+      return;
+    }
+
+    const amount=Number(depositAmount);
+
+    if(!amount || amount<=0){
+      alert("সঠিক Deposit Amount দিন");
+      return;
+    }
+
+    if(!depositMethod){
+      alert("Payment Method নির্বাচন করুন");
+      return;
+    }
+
+    if(!depositNumber){
+      alert("যে নম্বর থেকে টাকা পাঠিয়েছেন সেটি দিন");
+      return;
+    }
+
+    if(!depositTrx){
+      alert("Transaction ID দিন");
+      return;
+    }
+
+
+    const deposit={
+
+      id:Date.now(),
+
+      userId:currentUser.id,
+
+      userPhone:currentUser.phone,
+
+      amount,
+
+      method:depositMethod,
+
+      senderNumber:depositNumber,
+
+      trxId:depositTrx,
+
+      status:"Pending",
+
+      date:new Date().toLocaleString()
+
+    };
+
+
+    setDeposits(
+      [deposit,...deposits]
+    );
+
+
+    const message=
+
+`NEW DEPOSIT
+
+Customer: ${currentUser.phone}
+Amount: ৳${amount}
+Method: ${depositMethod}
+Sender: ${depositNumber}
+TrxID: ${depositTrx}`;
+
+
+    const wa=
+      "https://wa.me/"+
+      settings.whatsappNumber+
+      "?text="+
+      encodeURIComponent(message);
+
+
+    window.open(wa,"_blank");
+
+
+    alert(
+      "Deposit Request নেওয়া হয়েছে।\n"+
+      "Admin verify করার পর balance যোগ হবে।"
+    );
+
+
+    setDepositAmount("");
+    setDepositNumber("");
+    setDepositTrx("");
+
+  }
+
+
+  /* =====================================================
+     ADMIN LOGIN
+  ===================================================== */
+
+  function adminLogin(){
+
+    if(adminPassword===ADMIN_PASSWORD){
+
+      setAdminLogged(true);
+
+      setAdminPassword("");
+
+    }else{
+
+      alert("ভুল Admin Password");
+
+    }
+
+  }
+
+
+  /* =====================================================
+     ADMIN BALANCE
+  ===================================================== */
+
+  function addBalance(){
+
+    const amount=Number(balanceAmount);
+
+    const user=users.find(
+      u=>u.phone===customerSearch
+    );
+
+    if(!user){
+      alert("Customer পাওয়া যায়নি");
+      return;
+    }
+
+    if(!amount || amount<=0){
+      alert("সঠিক Amount দিন");
+      return;
+    }
+
+
+    const updatedUser={
+      ...user,
+      balance:(user.balance||0)+amount
+    };
+
+
+    setUsers(
+      users.map(u=>
+        u.id===user.id
+        ? updatedUser
+        : u
+      )
+    );
+
+
+    if(currentUser?.id===user.id){
+      setCurrentUser(updatedUser);
+    }
+
+
+    setBalanceAmount("");
+
+    alert(
+      "৳"+amount+
+      " Balance-এ যোগ হয়েছে।"
+    );
+
+  }
+
+
+  /* =====================================================
+     DEPOSIT STATUS
+  ===================================================== */
+
+  function approveDeposit(deposit){
+
+    if(deposit.status!=="Pending"){
+      return;
+    }
+
+    const user=users.find(
+      u=>u.id===deposit.userId
+    );
+
+    if(!user){
+      alert("Customer পাওয়া যায়নি");
+      return;
+    }
+
+
+    const updatedUser={
+      ...user,
+      balance:
+        (user.balance||0)+deposit.amount
+    };
+
+
+    setUsers(
+      users.map(u=>
+        u.id===user.id
+        ? updatedUser
+        : u
+      )
+    );
+
+
+    if(currentUser?.id===user.id){
+      setCurrentUser(updatedUser);
+    }
+
+
+    setDeposits(
+      deposits.map(d=>
+        d.id===deposit.id
+        ? {...d,status:"Approved"}
+        : d
+      )
+    );
+
+
+    alert(
+      "Deposit Approved এবং Balance যোগ হয়েছে।"
+    );
+
+  }
+
+
+  function cancelDeposit(id){
+
+    setDeposits(
+      deposits.map(d=>
+        d.id===id
+        ? {...d,status:"Cancelled"}
+        : d
+      )
+    );
+
+  }
+
+
+  /* =====================================================
+     ORDER STATUS
+  ===================================================== */
+
+  function changeOrderStatus(id,status){
+
+    setOrders(
+      orders.map(o=>
+        o.id===id
+        ? {...o,status}
+        : o
+      )
+    );
+
+  }
+
+
+  /* =====================================================
+     PACKAGE ADMIN
+  ===================================================== */
+
+  function updatePackage(id,field,value){
+
+    setPackages(
+      packages.map(pkg=>
+        pkg.id===id
+        ? {
+            ...pkg,
+            [field]:
+              field==="price"
+              ? Number(value)
+              : value
+          }
+        : pkg
+      )
+    );
+
+  }
+
+
+  function deletePackage(id){
+
+    if(!confirm("এই Package delete করবেন?")){
+      return;
+    }
+
+    setPackages(
+      packages.filter(p=>p.id!==id)
+    );
+
+  }
+
+
+  function addPackage(){
+
+    const price=Number(newPackagePrice);
+
+    if(!newPackageName.trim()){
+      alert("Package Name দিন");
+      return;
+    }
+
+    if(!price || price<=0){
+      alert("সঠিক Price দিন");
+      return;
+    }
+
+
+    const pkg={
+
+      id:Date.now(),
+
+      name:newPackageName,
+
+      price,
+
+      category:newPackageCategory,
+
+      active:true
+
+    };
+
+
+    setPackages(
+      [...packages,pkg]
+    );
+
+
+    setNewPackageName("");
+    setNewPackagePrice("");
+
+    alert("Package Added");
+
+  }
+
+
+  /* =====================================================
+     RANK
+  ===================================================== */
+
+  function updateRank(id,field,value){
+
+    setRanks(
+      ranks.map(r=>
+        r.id===id
+        ? {...r,[field]:value}
+        : r
+      )
+    );
+
+  }
+
+
+  /* =====================================================
+     COPY UID
+  ===================================================== */
+
+  function copyUID(uid){
+
+    navigator.clipboard.writeText(uid);
+
+    alert("UID Copy হয়েছে");
+
+  }
+
+
+  /* =====================================================
+     LOGIN PAGE
+  ===================================================== */
+
+  if(!currentUser){
+
+    return(
+
+      <div className="min-h-screen flex items-center justify-center p-4">
+
+        <div className="bg-white w-full max-w-md rounded-2xl shadow-xl p-6">
+
+          <h1 className="text-2xl font-bold text-indigo-700 text-center">
+            {settings.shopName}
+          </h1>
+
+          <p className="text-center text-gray-500 text-sm mt-1">
+            {authMode==="login"
+              ?"Customer Login"
+              :"Create Account"}
+          </p>
+
+
+          <div className="mt-6 space-y-3">
+
+            <input
+              value={phone}
+              onChange={e=>setPhone(e.target.value)}
+              placeholder="01XXXXXXXXX"
+              className="w-full border rounded-xl p-3"
+            />
+
+            <input
+              type="password"
+              value={password}
+              onChange={e=>setPassword(e.target.value)}
+              placeholder="Password"
+              className="w-full border rounded-xl p-3"
+            />
+
+
+            {authMode==="register" && (
+
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={e=>
+                  setConfirmPassword(e.target.value)
+                }
+                placeholder="Confirm Password"
+                className="w-full border rounded-xl p-3"
+              />
+
+            )}
+
+
+            <button
+              onClick={
+                authMode==="login"
+                ?login
+                :register
+              }
+              className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl"
+            >
+              {authMode==="login"
+                ?"Login"
+                :"Register"}
+            </button>
+
+
+            {authMode==="login" && (
+
+              <button
+                onClick={forgotPassword}
+                className="w-full text-red-600 text-sm"
+              >
+                Forgot Password?
+              </button>
+
+            )}
+
+
+            <button
+              onClick={()=>
+                setAuthMode(
+                  authMode==="login"
+                  ?"register"
+                  :"login"
+                )
+              }
+              className="w-full text-indigo-600 text-sm"
+            >
+              {authMode==="login"
+                ?"Create New Account"
+                :"Already have account? Login"}
+            </button>
+
           </div>
-          <button 
-            onClick={() => setActiveTab('admin')}
-            className="bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg font-medium"
+
+        </div>
+
+      </div>
+
+    );
+
+  }
+
+
+  /* =====================================================
+     CATEGORY PACKAGES
+  ===================================================== */
+
+  const visiblePackages=
+    packages.filter(
+      p=>
+        p.category===category &&
+        p.active!==false
+    );
+
+
+  /* =====================================================
+     MAIN UI
+  ===================================================== */
+
+  return(
+
+    <div className="min-h-screen bg-gray-50 pb-24 max-w-md mx-auto shadow-xl">
+
+
+      {/* HEADER */}
+
+      <header className="sticky top-0 z-40 bg-white shadow px-4 py-3 flex justify-between items-center">
+
+        <div>
+
+          <h1 className="text-xl font-bold text-indigo-700">
+            {settings.shopName}
+          </h1>
+
+          <p className="text-[10px] text-gray-500">
+            Fast & Secure TopUp
+          </p>
+
+        </div>
+
+
+        <div className="flex gap-2 items-center">
+
+          <div className="bg-indigo-50 text-indigo-700 px-3 py-2 rounded-full text-xs font-bold">
+            ৳ {currentUser.balance||0}
+          </div>
+
+
+          {/* ADMIN BUTTON */}
+
+          <button
+            onClick={()=>{
+              setTab("admin");
+              setAdminSection("dashboard");
+            }}
+            className="bg-gray-900 text-white px-3 py-2 rounded-lg text-xs font-bold"
           >
             Admin
           </button>
+
         </div>
+
       </header>
 
-      {/* Popup Modal (Image 7 & 8 Style) */}
-      {showPopup && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl relative">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">{popupNotice.title}</h3>
-            <p className="text-gray-600 text-sm mb-6">{popupNotice.description}</p>
-            <a 
-              href={popupNotice.videoLink} 
-              target="_blank" 
-              rel="noreferrer"
-              className="block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl mb-3 shadow text-sm"
-            >
-              ক্লিক করুন (ভিডিও দেখুন)
-            </a>
-            <button 
-              onClick={() => setShowPopup(false)}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl shadow text-sm"
-            >
-              ✕ CLOSE
-            </button>
-          </div>
-        </div>
-      )}
 
-      {/* Main Content Area */}
-      <main className="max-w-md mx-auto p-4">
+      <main className="p-4">
 
-        {/* Home Tab */}
-        {activeTab === 'home' && (
+
+        {/* =================================================
+           HOME
+        ================================================= */}
+
+        {tab==="home" && (
+
           <div>
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-4 text-white mb-6 shadow-lg">
-              <h2 className="text-lg font-bold">২০২৬ সালের সেরা সাইট 🔥</h2>
-              <p className="text-xs opacity-90 mt-1">সবচেয়ে কম মূল্যে ইনস্ট্যান্ট টপআপ করুন!</p>
+
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-5 mb-5 shadow">
+
+              <h2 className="text-xl font-bold">
+                ২০২৬ সালের সেরা TopUp 🔥
+              </h2>
+
+              <p className="text-xs mt-1">
+                {settings.notice}
+              </p>
+
             </div>
 
-            <h3 className="font-bold text-md text-gray-800 mb-3">Select Package</h3>
-            
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              {packages.map((pkg) => (
-                <div 
-                  key={pkg.id}
-                  onClick={() => setSelectedPkg(pkg)}
-                  className={`border rounded-xl p-3 cursor-pointer transition bg-white shadow-sm flex flex-col justify-between ${selectedPkg?.id === pkg.id ? 'border-indigo-600 ring-2 ring-indigo-100' : 'border-gray-200'}`}
+
+            {/* CATEGORY */}
+
+            <div className="flex gap-2 overflow-x-auto mb-5">
+
+              {[
+                ["diamond","💎 Diamond"],
+                ["weekly","👑 Weekly"],
+                ["weekly_lite","⚡ Weekly Lite"],
+                ["monthly","📅 Monthly"]
+              ].map(c=>(
+
+                <button
+                  key={c[0]}
+                  onClick={()=>{
+                    setCategory(c[0]);
+                    setSelectedPkg(null);
+                  }}
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold ${
+                    category===c[0]
+                    ?"bg-indigo-600 text-white"
+                    :"bg-white border"
+                  }`}
                 >
-                  <span className="font-semibold text-gray-800 text-sm">{pkg.name}</span>
-                  <span className="text-indigo-600 font-bold mt-2">BDT {pkg.price}</span>
-                </div>
+                  {c[1]}
+                </button>
+
               ))}
+
             </div>
 
-            {/* Checkout Form */}
+
+            <h3 className="font-bold mb-3">
+              {category==="diamond"
+                ?"💎 Diamond Packages"
+                :category==="weekly"
+                ?"👑 Weekly Packages"
+                :category==="weekly_lite"
+                ?"⚡ Weekly Lite Packages"
+                :"📅 Monthly Packages"}
+            </h3>
+
+
+            {/* PACKAGE GRID */}
+
+            <div className="grid grid-cols-2 gap-3">
+
+              {visiblePackages.map(pkg=>(
+
+                <button
+                  key={pkg.id}
+                  onClick={()=>choosePackage(pkg)}
+                  className={`bg-white border rounded-xl p-3 text-left shadow-sm ${
+                    selectedPkg?.id===pkg.id
+                    ?"border-indigo-600 ring-2 ring-indigo-100"
+                    :""
+                  }`}
+                >
+
+                  <div className="font-bold text-sm">
+                    {pkg.name}
+                  </div>
+
+                  <div className="text-indigo-600 font-bold mt-2">
+                    ৳ {pkg.price}
+                  </div>
+
+                </button>
+
+              ))}
+
+            </div>
+
+
+            {/* ORDER */}
+
             {selectedPkg && (
-              <div className="bg-white border border-indigo-100 p-4 rounded-2xl shadow-md mb-6">
-                <h4 className="font-bold text-gray-800 mb-2 text-sm">Selected: <span className="text-indigo-600">{selectedPkg.name} (BDT {selectedPkg.price})</span></h4>
-                <form onSubmit={handleCheckout} className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">আপনার ফোন নম্বর / UID দিন</label>
-                    <input 
-                      type="text" 
-                      value={phone} 
-                      onChange={(e) => setPhone(e.target.value)} 
-                      placeholder="01XXXXXXXXX" 
-                      className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:border-indigo-600"
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">ট্রানজেকশন আইডি (TrxID)</label>
-                    <input 
-                      type="text" 
-                      value={trxId} 
-                      onChange={(e) => setTrxId(e.target.value)} 
-                      placeholder="TrxID লিখুন" 
-                      className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:border-indigo-600"
-                      required 
-                    />
-                  </div>
-                  <button 
-                    type="submit" 
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-sm shadow transition"
-                  >
-                    Confirm & Send to WhatsApp 🚀
-                  </button>
-                </form>
+
+              <div className="bg-white mt-5 p-4 rounded-2xl shadow border">
+
+                <h3 className="font-bold mb-3">
+                  📦 Order Details
+                </h3>
+
+
+                <div className="bg-indigo-50 p-3 rounded-xl mb-3">
+
+                  <p className="font-bold">
+                    {selectedPkg.name}
+                  </p>
+
+                  <p className="text-xs text-gray-500">
+                    প্রতি প্যাক ৳{selectedPkg.price}
+                  </p>
+
+                </div>
+
+
+                <label className="text-xs font-bold">
+                  কতটি নিতে চান?
+                </label>
+
+                <select
+                  value={quantity}
+                  onChange={e=>
+                    setQuantity(Number(e.target.value))
+                  }
+                  className="w-full border rounded-xl p-3 mt-1 mb-4"
+                >
+
+                  {[1,2,3,4,5,6,7,8,9,10].map(n=>
+                    <option key={n} value={n}>
+                      {n} টি
+                    </option>
+                  )}
+
+                </select>
+
+
+                <label className="text-xs font-bold">
+                  Free Fire UID
+                </label>
+
+                <input
+                  value={uid}
+                  onChange={e=>setUid(e.target.value)}
+                  placeholder="আপনার UID লিখুন"
+                  className="w-full border rounded-xl p-3 mt-1"
+                />
+
+
+                <div className="bg-gray-100 p-4 rounded-xl flex justify-between mt-4">
+
+                  <b>
+                    Total
+                  </b>
+
+                  <b className="text-indigo-700">
+                    ৳ {totalPrice}
+                  </b>
+
+                </div>
+
+
+                <button
+                  onClick={submitOrder}
+                  className="w-full bg-green-600 text-white font-bold py-3 rounded-xl mt-4"
+                >
+                  Confirm Order 🚀
+                </button>
+
               </div>
+
             )}
+
           </div>
+
         )}
 
-        {/* Ranks & Giveaway Tab (Image 9 Style) */}
-        {activeTab === 'ranks' && (
-          <div>
-            <h3 className="font-bold text-lg mb-4 text-gray-800">Giveaway & Ranks Level</h3>
-            <div className="space-y-3">
-              {ranks.map((rank, index) => {
-                const isUnlocked = userSpend >= rank.minSpend;
-                const isCurrent = userSpend >= rank.minSpend && (index === ranks.length - 1 || userSpend < ranks[index + 1].minSpend);
 
-                return (
-                  <div key={rank.id} className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-sm">{rank.name}</h4>
-                      <p className="text-xs text-gray-500">{rank.range}</p>
-                      <p className="text-xs text-indigo-600 font-medium mt-1">🎁 Gift: {rank.gift}</p>
-                    </div>
-                    <div>
-                      {isCurrent ? (
-                        <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">Current</span>
-                      ) : isUnlocked ? (
-                        <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">Unlocked</span>
-                      ) : (
-                        <span className="bg-gray-100 text-gray-500 text-xs font-bold px-3 py-1 rounded-full">Locked</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+        {/* =================================================
+           DEPOSIT
+        ================================================= */}
+
+        {tab==="deposit" && (
+
+          <div>
+
+            <h2 className="text-xl font-bold mb-4">
+              💰 Deposit
+            </h2>
+
+
+            <div className="bg-white rounded-2xl p-4 shadow border">
+
+              <label className="text-xs font-bold">
+                কত টাকা Deposit করবেন?
+              </label>
+
+              <input
+                type="number"
+                value={depositAmount}
+                onChange={e=>
+                  setDepositAmount(e.target.value)
+                }
+                placeholder="যেমন 500"
+                className="w-full border rounded-xl p-3 mt-1 mb-4"
+              />
+
+
+              <label className="text-xs font-bold">
+                Payment Method
+              </label>
+
+              <select
+                value={depositMethod}
+                onChange={e=>
+                  setDepositMethod(e.target.value)
+                }
+                className="w-full border rounded-xl p-3 mt-1 mb-4"
+              >
+
+                <option value="">
+                  Select Payment
+                </option>
+
+                <option value="bKash Personal">
+                  bKash Personal
+                </option>
+
+                <option value="Nagad Personal">
+                  Nagad Personal
+                </option>
+
+              </select>
+
+
+              <div className="bg-indigo-50 p-4 rounded-xl mb-4">
+
+                <p className="text-xs">
+                  টাকা পাঠাবেন এই নম্বরে:
+                </p>
+
+                <p className="text-xl font-bold text-indigo-700">
+                  {settings.paymentNumber}
+                </p>
+
+              </div>
+
+
+              <input
+                value={depositNumber}
+                onChange={e=>
+                  setDepositNumber(e.target.value)
+                }
+                placeholder="যে নম্বর থেকে টাকা পাঠিয়েছেন"
+                className="w-full border rounded-xl p-3 mb-4"
+              />
+
+
+              <input
+                value={depositTrx}
+                onChange={e=>
+                  setDepositTrx(e.target.value)
+                }
+                placeholder="Transaction ID"
+                className="w-full border rounded-xl p-3 mb-4"
+              />
+
+
+              <button
+                onClick={submitDeposit}
+                className="w-full bg-green-600 text-white font-bold py-3 rounded-xl"
+              >
+                Deposit Submit
+              </button>
+
             </div>
+
           </div>
+
         )}
 
-        {/* Orders Tab */}
-        {activeTab === 'orders' && (
+
+        {/* =================================================
+           REWARDS
+        ================================================= */}
+
+        {tab==="rewards" && (
+
           <div>
-            <h3 className="font-bold text-lg mb-4 text-gray-800">My Orders History</h3>
-            {orders.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-10">কোনো অর্ডার করা হয়নি!</p>
-            ) : (
-              <div className="space-y-3">
-                {orders.map((ord) => (
-                  <div key={ord.id} className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm text-sm">
-                    <div className="flex justify-between font-bold text-gray-800 mb-1">
-                      <span>{ord.packageName}</span>
-                      <span className="text-indigo-600">৳ {ord.price}</span>
+
+            <h2 className="text-xl font-bold mb-4">
+              🏆 Rewards
+            </h2>
+
+
+            <div className="space-y-3">
+
+              {ranks.filter(r=>r.status!==false).map(rank=>{
+
+                const unlocked=
+                  (currentUser.totalSpend||0)
+                  >=Number(rank.requirement);
+
+                return(
+
+                  <div
+                    key={rank.id}
+                    className="bg-white border rounded-2xl p-4 shadow"
+                  >
+
+                    <div className="flex justify-between">
+
+                      <div>
+
+                        <h3 className="font-bold">
+                          {rank.name}
+                        </h3>
+
+                        <p className="text-xs text-gray-500">
+                          Requirement ৳{rank.requirement}
+                        </p>
+
+                        <p className="text-xs text-indigo-600 mt-1">
+                          🎁 {rank.gift}
+                        </p>
+
+                      </div>
+
+
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full h-fit ${
+                        unlocked
+                        ?"bg-green-100 text-green-700"
+                        :"bg-gray-100 text-gray-500"
+                      }`}>
+                        {unlocked
+                          ?"Unlocked"
+                          :"Locked"}
+                      </span>
+
                     </div>
-                    <p className="text-xs text-gray-500">Phone: {ord.phone}</p>
-                    <p className="text-xs text-gray-500">TrxID: {ord.trxId}</p>
-                    <p className="text-[10px] text-gray-400 mt-2">{ord.date}</p>
+
                   </div>
-                ))}
-              </div>
-            )}
+
+                );
+
+              })}
+
+            </div>
+
           </div>
+
         )}
 
-        {/* Admin Panel Tab */}
-        {activeTab === 'admin' && (
+
+        {/* =================================================
+           MY ORDERS
+        ================================================= */}
+
+        {tab==="orders" && (
+
           <div>
-            {!isAdminLoggedIn ? (
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mt-6">
-                <h3 className="font-bold text-lg mb-4 text-center">Admin Login</h3>
-                <form onSubmit={handleAdminLogin} className="space-y-3">
-                  <input 
-                    type="password" 
-                    placeholder="Enter Password (admin123)" 
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg p-2.5 text-sm"
-                    required
-                  />
-                  <button type="submit" className="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-lg text-sm">
-                    Login
+
+            <h2 className="text-xl font-bold mb-4">
+              📦 My Orders
+            </h2>
+
+
+            {orders.filter(
+              o=>o.userId===currentUser.id
+            ).length===0 && (
+
+              <div className="text-center text-gray-500 py-10">
+                এখনো কোনো Order নেই।
+              </div>
+
+            )}
+
+
+            {orders
+              .filter(o=>o.userId===currentUser.id)
+              .map(order=>(
+
+                <div
+                  key={order.id}
+                  className="bg-white border rounded-xl p-4 mb-3 shadow-sm"
+                >
+
+                  <div className="flex justify-between">
+
+                    <b>
+                      {order.packageName}
+                    </b>
+
+                    <b className="text-indigo-600">
+                      ৳{order.total}
+                    </b>
+
+                  </div>
+
+
+                  <p className="text-xs mt-2">
+                    Quantity: {order.quantity}
+                  </p>
+
+
+                  <p className="text-xs">
+                    UID: {order.uid}
+                  </p>
+
+
+                  <p className="text-xs text-gray-500">
+                    {order.date}
+                  </p>
+
+
+                  <div className={`mt-3 inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                    order.status==="Complete"
+                    ?"bg-green-100 text-green-700"
+                    :order.status==="Cancelled"
+                    ?"bg-red-100 text-red-700"
+                    :"bg-yellow-100 text-yellow-700"
+                  }`}>
+
+                    {order.status}
+
+                  </div>
+
+                </div>
+
+              ))}
+
+          </div>
+
+        )}
+
+
+        {/* =================================================
+           ADMIN
+        ================================================= */}
+
+        {tab==="admin" && (
+
+          <div>
+
+            {!adminLogged ? (
+
+              <div className="bg-white p-6 rounded-2xl shadow border">
+
+                <h2 className="text-xl font-bold text-center mb-4">
+                  🔐 Admin Login
+                </h2>
+
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={e=>
+                    setAdminPassword(e.target.value)
+                  }
+                  placeholder="Admin Password"
+                  className="w-full border rounded-xl p-3 mb-3"
+                />
+
+                <button
+                  onClick={adminLogin}
+                  className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl"
+                >
+                  Login
+                </button>
+
+              </div>
+
+            ) : (
+
+              <div>
+
+                {/* ADMIN HEADER */}
+
+                <div className="bg-indigo-600 text-white rounded-2xl p-4 flex justify-between items-center mb-4">
+
+                  <div>
+                    <b>Admin Panel</b>
+                    <p className="text-xs opacity-80">
+                      {settings.shopName}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={()=>setAdminLogged(false)}
+                    className="bg-red-500 px-3 py-2 rounded-lg text-xs"
+                  >
+                    Logout
                   </button>
-                </form>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center bg-indigo-50 p-3 rounded-xl">
-                  <span className="font-bold text-indigo-700 text-sm">Admin Dashboard</span>
-                  <button onClick={() => setIsAdminLoggedIn(false)} className="text-xs bg-red-500 text-white px-3 py-1 rounded-lg">Logout</button>
+
                 </div>
 
-                {/* Manage Ranks & Giveaway Gifts */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                  <h4 className="font-bold text-sm text-gray-800 mb-3">Manage Rank Gifts (Giveaway)</h4>
-                  {ranks.map((r, i) => (
-                    <div key={r.id} className="mb-3 pb-3 border-b border-gray-100 last:border-none">
-                      <span className="text-xs font-bold text-indigo-600">{r.name}</span>
-                      <input 
-                        type="text" 
-                        value={r.gift} 
-                        onChange={(e) => {
-                          const updated = [...ranks];
-                          updated[i].gift = e.target.value;
-                          setRanks(updated);
-                        }}
-                        className="w-full mt-1 border border-gray-300 rounded p-1.5 text-xs"
-                      />
-                    </div>
+
+                {/* ADMIN NAV */}
+
+                <div className="grid grid-cols-3 gap-2 mb-5">
+
+                  {[
+                    ["dashboard","📊 Dashboard"],
+                    ["packages","💎 Packages"],
+                    ["settings","⚙️ Settings"],
+                    ["orders","📦 Orders"],
+                    ["deposits","💰 Deposits"],
+                    ["customers","👤 Customers"]
+                  ].map(item=>(
+
+                    <button
+                      key={item[0]}
+                      onClick={()=>
+                        setAdminSection(item[0])
+                      }
+                      className={`p-3 rounded-xl text-xs font-bold ${
+                        adminSection===item[0]
+                        ?"bg-indigo-600 text-white"
+                        :"bg-white border"
+                      }`}
+                    >
+                      {item[1]}
+                    </button>
+
                   ))}
+
                 </div>
 
-                {/* Manage Popup Notice */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-                  <h4 className="font-bold text-sm text-gray-800 mb-3">Manage Popup Notice</h4>
-                  <div className="space-y-2">
-                    <input 
-                      type="text" 
-                      value={popupNotice.title}
-                      onChange={(e) => setPopupNotice({...popupNotice, title: e.target.value})}
-                      className="w-full border border-gray-300 rounded p-1.5 text-xs"
-                      placeholder="Title"
-                    />
-                    <textarea 
-                      value={popupNotice.description}
-                      onChange={(e) => setPopupNotice({...popupNotice, description: e.target.value})}
-                      className="w-full border border-gray-300 rounded p-1.5 text-xs"
-                      placeholder="Description"
-                    />
+
+                {/* ADMIN DASHBOARD */}
+
+                {adminSection==="dashboard" && (
+
+                  <div className="space-y-3">
+
+                    <div className="grid grid-cols-2 gap-3">
+
+                      <div className="bg-white border rounded-2xl p-4">
+                        <p className="text-xs text-gray-500">
+                          Customers
+                        </p>
+                        <b className="text-2xl">
+                          {users.length}
+                        </b>
+                      </div>
+
+                      <div className="bg-white border rounded-2xl p-4">
+                        <p className="text-xs text-gray-500">
+                          Orders
+                        </p>
+                        <b className="text-2xl">
+                          {orders.length}
+                        </b>
+                      </div>
+
+                      <div className="bg-white border rounded-2xl p-4">
+                        <p className="text-xs text-gray-500">
+                          Deposits
+                        </p>
+                        <b className="text-2xl">
+                          {deposits.length}
+                        </b>
+                      </div>
+
+                      <div className="bg-white border rounded-2xl p-4">
+                        <p className="text-xs text-gray-500">
+                          Pending Orders
+                        </p>
+                        <b className="text-2xl">
+                          {
+                            orders.filter(
+                              o=>o.status==="Pending"
+                            ).length
+                          }
+                        </b>
+                      </div>
+
+                    </div>
+
                   </div>
-                </div>
+
+                )}
+
+
+                {/* ADMIN PACKAGES */}
+
+                {adminSection==="packages" && (
+
+                  <div>
+
+                    <div className="bg-white border rounded-2xl p-4 mb-4">
+
+                      <h3 className="font-bold mb-3">
+                        ➕ Add Package
+                      </h3>
+
+                      <input
+                        value={newPackageName}
+                        onChange={e=>
+                          setNewPackageName(e.target.value)
+                        }
+                        placeholder="Package Name"
+                        className="w-full border rounded-xl p-3 mb-2"
+                      />
+
+                      <input
+                        type="number"
+                        value={newPackagePrice}
+                        onChange={e=>
+                          setNewPackagePrice(e.target.value)
+                        }
+                        placeholder="Price"
+                        className="w-full border rounded-xl p-3 mb-2"
+                      />
+
+                      <select
+                        value={newPackageCategory}
+                        onChange={e=>
+                          setNewPackageCategory(e.target.value)
+                        }
+                        className="w-full border rounded-xl p-3 mb-2"
+                      >
+
+                        <option value="diamond">
+                          Diamond
+                        </option>
+
+                        <option value="weekly">
+                          Weekly
+                        </option>
+
+                        <option value="weekly_lite">
+                          Weekly Lite
+                        </option>
+
+                        <option value="monthly">
+                          Monthly
+                        </option>
+
+                      </select>
+
+                      <button
+                        onClick={addPackage}
+                        className="w-full bg-green-600 text-white font-bold py-3 rounded-xl"
+                      >
+                        Add Package
+                      </button>
+
+                    </div>
+
+
+                    {packages.map(pkg=>(
+
+                      <div
+                        key={pkg.id}
+                        className="bg-white border rounded-xl p-3 mb-3"
+                      >
+
+                        <input
+                          value={pkg.name}
+                          onChange={e=>
+                            updatePackage(
+                              pkg.id,
+                              "name",
+                              e.target.value
+                            )
+                          }
+                          className="w-full border rounded-lg p-2 mb-2 text-sm"
+                        />
+
+                        <input
+                          type="number"
+                          value={pkg.price}
+                          onChange={e=>
+                            updatePackage(
+                              pkg.id,
+                              "price",
+                              e.target.value
+                            )
+                          }
+                          className="w-full border rounded-lg p-2 mb-2 text-sm"
+                        />
+
+                        <select
+                          value={pkg.category}
+                          onChange={e=>
+                            updatePackage(
+                              pkg.id,
+                              "category",
+                              e.target.value
+                            )
+                          }
+                          className="w-full border rounded-lg p-2 mb-2 text-sm"
+                        >
+
+                          <option value="diamond">
+                            Diamond
+                          </option>
+
+                          <option value="weekly">
+                            Weekly
+                          </option>
+
+                          <option value="weekly_lite">
+                            Weekly Lite
+                          </option>
+
+                          <option value="monthly">
+                            Monthly
+                          </option>
+
+                        </select>
+
+
+                        <div className="flex gap-2">
+
+                          <button
+                            onClick={()=>
+                              updatePackage(
+                                pkg.id,
+                                "active",
+                                !pkg.active
+                              )
+                            }
+                            className={`flex-1 py-2 rounded-lg text-xs font-bold ${
+                              pkg.active
+                              ?"bg-green-100 text-green-700"
+                              :"bg-gray-200 text-gray-600"
+                            }`}
+                          >
+                            {pkg.active
+                              ?"Active"
+                              :"Hidden"}
+                          </button>
+
+
+                          <button
+                            onClick={()=>
+                              deletePackage(pkg.id)
+                            }
+                            className="bg-red-500 text-white px-4 rounded-lg text-xs"
+                          >
+                            Delete
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    ))}
+
+                  </div>
+
+                )}
+
+
+                {/* ADMIN SETTINGS */}
+
+                {adminSection==="settings" && (
+
+                  <div className="bg-white border rounded-2xl p-4">
+
+                    <h3 className="font-bold mb-4">
+                      ⚙️ Website Settings
+                    </h3>
+
+
+                    <label className="text-xs font-bold">
+                      Website Name
+                    </label>
+
+                    <input
+                      value={settings.shopName}
+                      onChange={e=>
+                        setSettings({
+                          ...settings,
+                          shopName:e.target.value
+                        })
+                      }
+                      className="w-full border rounded-xl p-3 mt-1 mb-3"
+                    />
+
+
+                    <label className="text-xs font-bold">
+                      Deposit Number
+                    </label>
+
+                    <input
+                      value={settings.paymentNumber}
+                      onChange={e=>
+                        setSettings({
+                          ...settings,
+                          paymentNumber:e.target.value
+                        })
+                      }
+                      className="w-full border rounded-xl p-3 mt-1 mb-3"
+                    />
+
+
+                    <label className="text-xs font-bold">
+                      WhatsApp Number
+                    </label>
+
+                    <input
+                      value={settings.whatsappNumber}
+                      onChange={e=>
+                        setSettings({
+                          ...settings,
+                          whatsappNumber:e.target.value
+                        })
+                      }
+                      className="w-full border rounded-xl p-3 mt-1 mb-3"
+                    />
+
+
+                    <label className="text-xs font-bold">
+                      Telegram Username
+                    </label>
+
+                    <input
+                      value={settings.telegramUsername}
+                      onChange={e=>
+                        setSettings({
+                          ...settings,
+                          telegramUsername:e.target.value
+                        })
+                      }
+                      placeholder="@username"
+                      className="w-full border rounded-xl p-3 mt-1 mb-3"
+                    />
+
+
+                    <label className="text-xs font-bold">
+                      Home Notice
+                    </label>
+
+                    <textarea
+                      value={settings.notice}
+                      onChange={e=>
+                        setSettings({
+                          ...settings,
+                          notice:e.target.value
+                        })
+                      }
+                      className="w-full border rounded-xl p-3 mt-1"
+                    />
+
+                  </div>
+
+                )}
+
+
+                {/* ADMIN ORDERS */}
+
+                {adminSection==="orders" && (
+
+                  <div>
+
+                    <h3 className="font-bold mb-3">
+                      📦 All Customer Orders
+                    </h3>
+
+
+                    {orders.map(order=>(
+
+                      <div
+                        key={order.id}
+                        className="bg-white border rounded-xl p-4 mb-3"
+                      >
+
+                        <div className="flex justify-between">
+
+                          <b>
+                            {order.packageName}
+                          </b>
+
+                          <b className="text-indigo-600">
+                            ৳{order.total}
+                          </b>
+
+                        </div>
+
+
+                        <p className="text-xs mt-2">
+                          Customer: {order.userPhone}
+                        </p>
+
+
+                        <div className="flex items-center gap-2 mt-2">
+
+                          <p className="text-xs">
+                            UID: {order.uid}
+                          </p>
+
+                          <button
+                            onClick={()=>
+                              copyUID(order.uid)
+                            }
+                            className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-[10px] font-bold"
+                          >
+                            Copy UID
+                          </button>
+
+                        </div>
+
+
+                        <p className="text-xs">
+                          Quantity: {order.quantity}
+                        </p>
+
+
+                        <p className="text-xs text-gray-500">
+                          {order.date}
+                        </p>
+
+
+                        <div className="grid grid-cols-3 gap-2 mt-3">
+
+                          <button
+                            onClick={()=>
+                              changeOrderStatus(
+                                order.id,
+                                "Pending"
+                              )
+                            }
+                            className="bg-yellow-500 text-white py-2 rounded-lg text-[10px] font-bold"
+                          >
+                            Pending
+                          </button>
+
+                          <button
+                            onClick={()=>
+                              changeOrderStatus(
+                                order.id,
+                                "Complete"
+                              )
+                            }
+                            className="bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold"
+                          >
+                            Complete
+                          </button>
+
+                          <button
+                            onClick={()=>
+                              changeOrderStatus(
+                                order.id,
+                                "Cancelled"
+                              )
+                            }
+                            className="bg-red-500 text-white py-2 rounded-lg text-[10px] font-bold"
+                          >
+                            Cancel
+                          </button>
+
+                        </div>
+
+                      </div>
+
+                    ))}
+
+                  </div>
+
+                )}
+
+
+                {/* ADMIN DEPOSITS */}
+
+                {adminSection==="deposits" && (
+
+                  <div>
+
+                    <h3 className="font-bold mb-3">
+                      💰 Deposit Requests
+                    </h3>
+
+
+                    {deposits.map(d=>(
+
+                      <div
+                        key={d.id}
+                        className="bg-white border rounded-xl p-4 mb-3"
+                      >
+
+                        <b>
+                          {d.userPhone}
+                        </b>
+
+                        <p className="text-sm mt-1">
+                          Amount: ৳{d.amount}
+                        </p>
+
+                        <p className="text-xs">
+                          Method: {d.method}
+                        </p>
+
+                        <p className="text-xs">
+                          Sender: {d.senderNumber}
+                        </p>
+
+                        <p className="text-xs">
+                          TrxID: {d.trxId}
+                        </p>
+
+                        <p className="text-xs mt-1">
+                          Status: {d.status}
+                        </p>
+
+
+                        {d.status==="Pending" && (
+
+                          <div className="flex gap-2 mt-3">
+
+                            <button
+                              onClick={()=>
+                                approveDeposit(d)
+                              }
+                              className="flex-1 bg-green-600 text-white py-2 rounded-lg text-xs font-bold"
+                            >
+                              Approve + Balance
+                            </button>
+
+                            <button
+                              onClick={()=>
+                                cancelDeposit(d.id)
+                              }
+                              className="flex-1 bg-red-500 text-white py-2 rounded-lg text-xs font-bold"
+                            >
+                              Cancel
+                            </button>
+
+                          </div>
+
+                        )}
+
+                      </div>
+
+                    ))}
+
+                  </div>
+
+                )}
+
+
+                {/* ADMIN CUSTOMERS */}
+
+                {adminSection==="customers" && (
+
+                  <div>
+
+                    <h3 className="font-bold mb-3">
+                      👤 Customers
+                    </h3>
+
+
+                    {users.map(user=>(
+
+                      <div
+                        key={user.id}
+                        className="bg-white border rounded-xl p-4 mb-3"
+                      >
+
+                        <b>
+                          {user.phone}
+                        </b>
+
+                        <p className="text-xs mt-1">
+                          Balance: ৳{user.balance||0}
+                        </p>
+
+                        <p className="text-xs">
+                          Total Spend: ৳{user.totalSpend||0}
+                        </p>
+
+                        <p className="text-[10px] text-gray-400">
+                          Registered: {user.createdAt}
+                        </p>
+
+
+                        <button
+                          onClick={()=>{
+                            setCustomerSearch(user.phone);
+                            setAdminSection("dashboard");
+                          }}
+                          className="mt-2 bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs"
+                        >
+                          Manage Balance
+                        </button>
+
+                      </div>
+
+                    ))}
+
+
+                    <div className="bg-white border rounded-2xl p-4 mt-4">
+
+                      <h3 className="font-bold mb-3">
+                        💳 Add Customer Balance
+                      </h3>
+
+                      <input
+                        value={customerSearch}
+                        onChange={e=>
+                          setCustomerSearch(e.target.value)
+                        }
+                        placeholder="Customer Phone"
+                        className="w-full border rounded-xl p-3 mb-2"
+                      />
+
+                      <input
+                        type="number"
+                        value={balanceAmount}
+                        onChange={e=>
+                          setBalanceAmount(e.target.value)
+                        }
+                        placeholder="Amount"
+                        className="w-full border rounded-xl p-3 mb-2"
+                      />
+
+                      <button
+                        onClick={addBalance}
+                        className="w-full bg-green-600 text-white font-bold py-3 rounded-xl"
+                      >
+                        Add Balance
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                )}
+
               </div>
+
             )}
+
           </div>
+
         )}
 
       </main>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-3 z-40 max-w-md mx-auto">
-        <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center text-xs ${activeTab === 'home' ? 'text-indigo-600 font-bold' : 'text-gray-500'}`}>
-          <span className="text-base">🏠</span>
-          <span>Home</span>
+
+      {/* =================================================
+         BOTTOM NAV
+      ================================================= */}
+
+      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t flex justify-around py-3 z-40">
+
+        <button
+          onClick={()=>setTab("home")}
+          className={`text-xs ${
+            tab==="home"
+            ?"text-indigo-600 font-bold"
+            :"text-gray-500"
+          }`}
+        >
+          🏠
+          <br/>
+          Home
         </button>
-        <button onClick={() => setActiveTab('ranks')} className={`flex flex-col items-center text-xs ${activeTab === 'ranks' ? 'text-indigo-600 font-bold' : 'text-gray-500'}`}>
-          <span className="text-base">🏆</span>
-          <span>Ranks/Giveaway</span>
+
+
+        <button
+          onClick={()=>setTab("deposit")}
+          className={`text-xs ${
+            tab==="deposit"
+            ?"text-indigo-600 font-bold"
+            :"text-gray-500"
+          }`}
+        >
+          💰
+          <br/>
+          Deposit
         </button>
-        <button onClick={() => setActiveTab('orders')} className={`flex flex-col items-center text-xs ${activeTab === 'orders' ? 'text-indigo-600 font-bold' : 'text-gray-500'}`}>
-          <span className="text-base">📦</span>
-          <span>My Orders</span>
+
+
+        <button
+          onClick={()=>setTab("rewards")}
+          className={`text-xs ${
+            tab==="rewards"
+            ?"text-indigo-600 font-bold"
+            :"text-gray-500"
+          }`}
+        >
+          🏆
+          <br/>
+          Rewards
         </button>
+
+
+        <button
+          onClick={()=>setTab("orders")}
+          className={`text-xs ${
+            tab==="orders"
+            ?"text-indigo-600 font-bold"
+            :"text-gray-500"
+          }`}
+        >
+          📦
+          <br/>
+          Orders
+        </button>
+
+
+        <button
+          onClick={logout}
+          className="text-xs text-red-500"
+        >
+          🚪
+          <br/>
+          Logout
+        </button>
+
       </nav>
 
     </div>
+
   );
+
 }
+
+
+ReactDOM
+  .createRoot(
+    document.getElementById("root")
+  )
+  .render(<App/>);
+
+</script>
+
+</body>
+</html>

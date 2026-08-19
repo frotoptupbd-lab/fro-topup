@@ -1,1301 +1,721 @@
-className="bg-gray-900 text-white px-3 py-2 rounded-lg text-xs font-bold"
-          >
-            Admin
-          </button>
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TOPUP BUZZ</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { background: #f3f4f6; font-family: Arial, sans-serif; margin: 0; }
+  .hide { display: none !important; }
+</style>
+</head>
+<body class="bg-gray-100 flex justify-center">
 
+<div class="w-full max-w-md bg-white min-h-screen shadow-xl relative pb-20 flex flex-col justify-between" id="app-container">
+    
+    <!-- HEADER -->
+    <header class="bg-white border-b px-4 py-3 flex justify-between items-center sticky top-0 z-30">
+        <div>
+            <h1 id="shop-title" class="text-lg font-bold text-indigo-700">TOPUP BUZZ</h1>
+            <p class="text-[10px] text-gray-500">Fast & Secure TopUp</p>
         </div>
-
-      </header>
-
-
-      <main className="p-4">
-
-
-        {/* =================================================
-           HOME
-        ================================================= */}
-
-        {tab==="home" && (
-
-          <div>
-
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-5 mb-5 shadow">
-
-              <h2 className="text-xl font-bold">
-                ২০২৬ সালের সেরা TopUp 🔥
-              </h2>
-
-              <p className="text-xs mt-1">
-                {settings.notice}
-              </p>
-
+        <div class="flex items-center gap-2">
+            <div id="user-balance-badge" class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-bold hide">
+                ৳ <span id="header-balance">0</span>
             </div>
-
-
-            {/* CATEGORY */}
-
-            <div className="flex gap-2 overflow-x-auto mb-5">
-
-              {[
-                ["diamond","💎 Diamond"],
-                ["weekly","👑 Weekly"],
-                ["weekly_lite","⚡ Weekly Lite"],
-                ["monthly","📅 Monthly"]
-              ].map(c=>(
-
-                <button
-                  key={c[0]}
-                  onClick={()=>{
-                    setCategory(c[0]);
-                    setSelectedPkg(null);
-                  }}
-                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold ${
-                    category===c[0]
-                    ?"bg-indigo-600 text-white"
-                    :"bg-white border"
-                  }`}
-                >
-                  {c[1]}
-                </button>
-
-              ))}
-
-            </div>
-
-
-            <h3 className="font-bold mb-3">
-              {category==="diamond"
-                ?"💎 Diamond Packages"
-                :category==="weekly"
-                ?"👑 Weekly Packages"
-                :category==="weekly_lite"
-                ?"⚡ Weekly Lite Packages"
-                :"📅 Monthly Packages"}
-            </h3>
-
-
-            {/* PACKAGE GRID */}
-
-            <div className="grid grid-cols-2 gap-3">
-
-              {visiblePackages.map(pkg=>(
-
-                <button
-                  key={pkg.id}
-                  onClick={()=>choosePackage(pkg)}
-                  className={`bg-white border rounded-xl p-3 text-left shadow-sm ${
-                    selectedPkg?.id===pkg.id
-                    ?"border-indigo-600 ring-2 ring-indigo-100"
-                    :""
-                  }`}
-                >
-
-                  <div className="font-bold text-sm">
-                    {pkg.name}
-                  </div>
-
-                  <div className="text-indigo-600 font-bold mt-2">
-                    ৳ {pkg.price}
-                  </div>
-
-                </button>
-
-              ))}
-
-            </div>
-
-
-            {/* ORDER */}
-
-            {selectedPkg && (
-
-              <div className="bg-white mt-5 p-4 rounded-2xl shadow border">
-
-                <h3 className="font-bold mb-3">
-                  📦 Order Details
-                </h3>
-
-
-                <div className="bg-indigo-50 p-3 rounded-xl mb-3">
-
-                  <p className="font-bold">
-                    {selectedPkg.name}
-                  </p>
-
-                  <p className="text-xs text-gray-500">
-                    প্রতি প্যাক ৳{selectedPkg.price}
-                  </p>
-
-                </div>
-
-
-                <label className="text-xs font-bold">
-                  কতটি নিতে চান?
-                </label>
-
-                <select
-                  value={quantity}
-                  onChange={e=>
-                    setQuantity(Number(e.target.value))
-                  }
-                  className="w-full border rounded-xl p-3 mt-1 mb-4"
-                >
-
-                  {[1,2,3,4,5,6,7,8,9,10].map(n=>
-                    <option key={n} value={n}>
-                      {n} টি
-                    </option>
-                  )}
-
-                </select>
-
-
-                <label className="text-xs font-bold">
-                  Free Fire UID
-                </label>
-
-                <input
-                  value={uid}
-                  onChange={e=>setUid(e.target.value)}
-                  placeholder="আপনার UID লিখুন"
-                  className="w-full border rounded-xl p-3 mt-1"
-                />
-
-
-                <div className="bg-gray-100 p-4 rounded-xl flex justify-between mt-4">
-
-                  <b>
-                    Total
-                  </b>
-
-                  <b className="text-indigo-700">
-                    ৳ {totalPrice}
-                  </b>
-
-                </div>
-
-
-                <button
-                  onClick={submitOrder}
-                  className="w-full bg-green-600 text-white font-bold py-3 rounded-xl mt-4"
-                >
-                  Confirm Order 🚀
-                </button>
-
-              </div>
-
-            )}
-
-          </div>
-
-        )}
-
-
-        {/* =================================================
-           DEPOSIT
-        ================================================= */}
-
-        {tab==="deposit" && (
-
-          <div>
-
-            <h2 className="text-xl font-bold mb-4">
-              💰 Deposit
-            </h2>
-
-
-            <div className="bg-white rounded-2xl p-4 shadow border">
-
-              <label className="text-xs font-bold">
-                কত টাকা Deposit করবেন?
-              </label>
-
-              <input
-                type="number"
-                value={depositAmount}
-                onChange={e=>
-                  setDepositAmount(e.target.value)
-                }
-                placeholder="যেমন 500"
-                className="w-full border rounded-xl p-3 mt-1 mb-4"
-              />
-
-
-              <label className="text-xs font-bold">
-                Payment Method
-              </label>
-
-              <select
-                value={depositMethod}
-                onChange={e=>
-                  setDepositMethod(e.target.value)
-                }
-                className="w-full border rounded-xl p-3 mt-1 mb-4"
-              >
-
-                <option value="">
-                  Select Payment
-                </option>
-
-                <option value="bKash Personal">
-                  bKash Personal
-                </option>
-
-                <option value="Nagad Personal">
-                  Nagad Personal
-                </option>
-
-              </select>
-
-
-              <div className="bg-indigo-50 p-4 rounded-xl mb-4">
-
-                <p className="text-xs">
-                  টাকা পাঠাবেন এই নম্বরে:
-                </p>
-
-                <p className="text-xl font-bold text-indigo-700">
-                  {settings.paymentNumber}
-                </p>
-
-              </div>
-
-
-              <input
-                value={depositNumber}
-                onChange={e=>
-                  setDepositNumber(e.target.value)
-                }
-                placeholder="যে নম্বর থেকে টাকা পাঠিয়েছেন"
-                className="w-full border rounded-xl p-3 mb-4"
-              />
-
-
-              <input
-                value={depositTrx}
-                onChange={e=>
-                  setDepositTrx(e.target.value)
-                }
-                placeholder="Transaction ID"
-                className="w-full border rounded-xl p-3 mb-4"
-              />
-
-
-              <button
-                onClick={submitDeposit}
-                className="w-full bg-green-600 text-white font-bold py-3 rounded-xl"
-              >
-                Deposit Submit
-              </button>
-
-            </div>
-
-          </div>
-
-        )}
-
-
-        {/* =================================================
-           REWARDS
-        ================================================= */}
-
-        {tab==="rewards" && (
-
-          <div>
-
-            <h2 className="text-xl font-bold mb-4">
-              🏆 Rewards
-            </h2>
-
-
-            <div className="space-y-3">
-
-              {ranks.filter(r=>r.status!==false).map(rank=>{
-
-                const unlocked=
-                  (currentUser.totalSpend||0)
-                  >=Number(rank.requirement);
-
-                return(
-
-                  <div
-                    key={rank.id}
-                    className="bg-white border rounded-2xl p-4 shadow"
-                  >
-
-                    <div className="flex justify-between">
-
-                      <div>
-
-                        <h3 className="font-bold">
-                          {rank.name}
-                        </h3>
-
-                        <p className="text-xs text-gray-500">
-                          Requirement ৳{rank.requirement}
-                        </p>
-
-                        <p className="text-xs text-indigo-600 mt-1">
-                          🎁 {rank.gift}
-                        </p>
-
-                      </div>
-
-
-                      <span className={`text-xs font-bold px-3 py-1 rounded-full h-fit ${
-                        unlocked
-                        ?"bg-green-100 text-green-700"
-                        :"bg-gray-100 text-gray-500"
-                      }`}>
-                        {unlocked
-                          ?"Unlocked"
-                          :"Locked"}
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                );
-
-              })}
-
-            </div>
-
-          </div>
-
-        )}
-
-
-        {/* =================================================
-           MY ORDERS
-        ================================================= */}
-
-        {tab==="orders" && (
-
-          <div>
-
-            <h2 className="text-xl font-bold mb-4">
-              📦 My Orders
-            </h2>
-
-
-            {orders.filter(
-              o=>o.userId===currentUser.id
-            ).length===0 && (
-
-              <div className="text-center text-gray-500 py-10">
-                এখনো কোনো Order নেই।
-              </div>
-
-            )}
-
-
-            {orders
-              .filter(o=>o.userId===currentUser.id)
-              .map(order=>(
-
-                <div
-                  key={order.id}
-                  className="bg-white border rounded-xl p-4 mb-3 shadow-sm"
-                >
-
-                  <div className="flex justify-between">
-
-                    <b>
-                      {order.packageName}
-                    </b>
-
-                    <b className="text-indigo-600">
-                      ৳{order.total}
-                    </b>
-
-                  </div>
-
-
-                  <p className="text-xs mt-2">
-                    Quantity: {order.quantity}
-                  </p>
-
-
-                  <p className="text-xs">
-                    UID: {order.uid}
-                  </p>
-
-
-                  <p className="text-xs text-gray-500">
-                    {order.date}
-                  </p>
-
-
-                  <div className={`mt-3 inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                    order.status==="Complete"
-                    ?"bg-green-100 text-green-700"
-                    :order.status==="Cancelled"
-                    ?"bg-red-100 text-red-700"
-                    :"bg-yellow-100 text-yellow-700"
-                  }`}>
-
-                    {order.status}
-
-                  </div>
-
-                </div>
-
-              ))}
-
-          </div>
-
-        )}
-
-
-        {/* =================================================
-           ADMIN
-        ================================================= */}
-
-        {tab==="admin" && (
-
-          <div>
-
-            {!adminLogged ? (
-
-              <div className="bg-white p-6 rounded-2xl shadow border">
-
-                <h2 className="text-xl font-bold text-center mb-4">
-                  🔐 Admin Login
-                </h2>
-
-                <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={e=>
-                    setAdminPassword(e.target.value)
-                  }
-                  placeholder="Admin Password"
-                  className="w-full border rounded-xl p-3 mb-3"
-                />
-
-                <button
-                  onClick={adminLogin}
-                  className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl"
-                >
-                  Login
-                </button>
-
-              </div>
-
-            ) : (
-
-              <div>
-
-                {/* ADMIN HEADER */}
-
-                <div className="bg-indigo-600 text-white rounded-2xl p-4 flex justify-between items-center mb-4">
-
-                  <div>
-                    <b>Admin Panel</b>
-                    <p className="text-xs opacity-80">
-                      {settings.shopName}
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={()=>setAdminLogged(false)}
-                    className="bg-red-500 px-3 py-2 rounded-lg text-xs"
-                  >
-                    Logout
-                  </button>
-
-                </div>
-
-
-                {/* ADMIN NAV */}
-
-                <div className="grid grid-cols-3 gap-2 mb-5">
-
-                  {[
-                    ["dashboard","📊 Dashboard"],
-                    ["packages","💎 Packages"],
-                    ["settings","⚙️ Settings"],
-                    ["orders","📦 Orders"],
-                    ["deposits","💰 Deposits"],
-                    ["customers","👤 Customers"]
-                  ].map(item=>(
-
-                    <button
-                      key={item[0]}
-                      onClick={()=>
-                        setAdminSection(item[0])
-                      }
-                      className={`p-3 rounded-xl text-xs font-bold ${
-                        adminSection===item[0]
-                        ?"bg-indigo-600 text-white"
-                        :"bg-white border"
-                      }`}
-                    >
-                      {item[1]}
-                    </button>
-
-                  ))}
-
-                </div>
-
-
-                {/* ADMIN DASHBOARD */}
-
-                {adminSection==="dashboard" && (
-
-                  <div className="space-y-3">
-
-                    <div className="grid grid-cols-2 gap-3">
-
-                      <div className="bg-white border rounded-2xl p-4">
-                        <p className="text-xs text-gray-500">
-                          Customers
-                        </p>
-                        <b className="text-2xl">
-                          {users.length}
-                        </b>
-                      </div>
-
-                      <div className="bg-white border rounded-2xl p-4">
-                        <p className="text-xs text-gray-500">
-                          Orders
-                        </p>
-                        <b className="text-2xl">
-                          {orders.length}
-                        </b>
-                      </div>
-
-                      <div className="bg-white border rounded-2xl p-4">
-                        <p className="text-xs text-gray-500">
-                          Deposits
-                        </p>
-                        <b className="text-2xl">
-                          {deposits.length}
-                        </b>
-                      </div>
-
-                      <div className="bg-white border rounded-2xl p-4">
-                        <p className="text-xs text-gray-500">
-                          Pending Orders
-                        </p>
-                        <b className="text-2xl">
-                          {
-                            orders.filter(
-                              o=>o.status==="Pending"
-                            ).length
-                          }
-                        </b>
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                )}
-
-
-                {/* ADMIN PACKAGES */}
-
-                {adminSection==="packages" && (
-
-                  <div>
-
-                    <div className="bg-white border rounded-2xl p-4 mb-4">
-
-                      <h3 className="font-bold mb-3">
-                        ➕ Add Package
-                      </h3>
-
-                      <input
-                        value={newPackageName}
-                        onChange={e=>
-                          setNewPackageName(e.target.value)
-                        }
-                        placeholder="Package Name"
-                        className="w-full border rounded-xl p-3 mb-2"
-                      />
-
-                      <input
-                        type="number"
-                        value={newPackagePrice}
-                        onChange={e=>
-                          setNewPackagePrice(e.target.value)
-                        }
-                        placeholder="Price"
-                        className="w-full border rounded-xl p-3 mb-2"
-                      />
-
-                      <select
-                        value={newPackageCategory}
-                        onChange={e=>
-                          setNewPackageCategory(e.target.value)
-                        }
-                        className="w-full border rounded-xl p-3 mb-2"
-                      >
-
-                        <option value="diamond">
-                          Diamond
-                        </option>
-
-                        <option value="weekly">
-                          Weekly
-                        </option>
-
-                        <option value="weekly_lite">
-                          Weekly Lite
-                        </option>
-
-                        <option value="monthly">
-                          Monthly
-                        </option>
-
-                      </select>
-
-                      <button
-                        onClick={addPackage}
-                        className="w-full bg-green-600 text-white font-bold py-3 rounded-xl"
-                      >
-                        Add Package
-                      </button>
-
-                    </div>
-
-
-                    {packages.map(pkg=>(
-
-                      <div
-                        key={pkg.id}
-                        className="bg-white border rounded-xl p-3 mb-3"
-                      >
-
-                        <input
-                          value={pkg.name}
-                          onChange={e=>
-                            updatePackage(
-                              pkg.id,
-                              "name",
-                              e.target.value
-                            )
-                          }
-                          className="w-full border rounded-lg p-2 mb-2 text-sm"
-                        />
-
-                        <input
-                          type="number"
-                          value={pkg.price}
-                          onChange={e=>
-                            updatePackage(
-                              pkg.id,
-                              "price",
-                              e.target.value
-                            )
-                          }
-                          className="w-full border rounded-lg p-2 mb-2 text-sm"
-                        />
-
-                        <select
-                          value={pkg.category}
-                          onChange={e=>
-                            updatePackage(
-                              pkg.id,
-                              "category",
-                              e.target.value
-                            )
-                          }
-                          className="w-full border rounded-lg p-2 mb-2 text-sm"
-                        >
-
-                          <option value="diamond">
-                            Diamond
-                          </option>
-
-                          <option value="weekly">
-                            Weekly
-                          </option>
-
-                          <option value="weekly_lite">
-                            Weekly Lite
-                          </option>
-
-                          <option value="monthly">
-                            Monthly
-                          </option>
-
-                        </select>
-
-
-                        <div className="flex gap-2">
-
-                          <button
-                            onClick={()=>
-                              updatePackage(
-                                pkg.id,
-                                "active",
-                                !pkg.active
-                              )
-                            }
-                            className={`flex-1 py-2 rounded-lg text-xs font-bold ${
-                              pkg.active
-                              ?"bg-green-100 text-green-700"
-                              :"bg-gray-200 text-gray-600"
-                            }`}
-                          >
-                            {pkg.active
-                              ?"Active"
-                              :"Hidden"}
-                          </button>
-
-
-                          <button
-                            onClick={()=>
-                              deletePackage(pkg.id)
-                            }
-                            className="bg-red-500 text-white px-4 rounded-lg text-xs"
-                          >
-                            Delete
-                          </button>
-
-                        </div>
-
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                )}
-
-
-                {/* ADMIN SETTINGS */}
-
-                {adminSection==="settings" && (
-
-                  <div className="bg-white border rounded-2xl p-4">
-
-                    <h3 className="font-bold mb-4">
-                      ⚙️ Website Settings
-                    </h3>
-
-
-                    <label className="text-xs font-bold">
-                      Website Name
-                    </label>
-
-                    <input
-                      value={settings.shopName}
-                      onChange={e=>
-                        setSettings({
-                          ...settings,
-                          shopName:e.target.value
-                        })
-                      }
-                      className="w-full border rounded-xl p-3 mt-1 mb-3"
-                    />
-
-
-                    <label className="text-xs font-bold">
-                      Deposit Number
-                    </label>
-
-                    <input
-                      value={settings.paymentNumber}
-                      onChange={e=>
-                        setSettings({
-                          ...settings,
-                          paymentNumber:e.target.value
-                        })
-                      }
-                      className="w-full border rounded-xl p-3 mt-1 mb-3"
-                    />
-
-
-                    <label className="text-xs font-bold">
-                      WhatsApp Number
-                    </label>
-
-                    <input
-                      value={settings.whatsappNumber}
-                      onChange={e=>
-                        setSettings({
-                          ...settings,
-                          whatsappNumber:e.target.value
-                        })
-                      }
-                      className="w-full border rounded-xl p-3 mt-1 mb-3"
-                    />
-
-
-                    <label className="text-xs font-bold">
-                      Telegram Username
-                    </label>
-
-                    <input
-                      value={settings.telegramUsername}
-                      onChange={e=>
-                        setSettings({
-                          ...settings,
-                          telegramUsername:e.target.value
-                        })
-                      }
-                      placeholder="@username"
-                      className="w-full border rounded-xl p-3 mt-1 mb-3"
-                    />
-
-
-                    <label className="text-xs font-bold">
-                      Home Notice
-                    </label>
-
-                    <textarea
-                      value={settings.notice}
-                      onChange={e=>
-                        setSettings({
-                          ...settings,
-                          notice:e.target.value
-                        })
-                      }
-                      className="w-full border rounded-xl p-3 mt-1"
-                    />
-
-                  </div>
-
-                )}
-
-
-                {/* ADMIN ORDERS */}
-
-                {adminSection==="orders" && (
-
-                  <div>
-
-                    <h3 className="font-bold mb-3">
-                      📦 All Customer Orders
-                    </h3>
-
-
-                    {orders.map(order=>(
-
-                      <div
-                        key={order.id}
-                        className="bg-white border rounded-xl p-4 mb-3"
-                      >
-
-                        <div className="flex justify-between">
-
-                          <b>
-                            {order.packageName}
-                          </b>
-
-                          <b className="text-indigo-600">
-                            ৳{order.total}
-                          </b>
-
-                        </div>
-
-
-                        <p className="text-xs mt-2">
-                          Customer: {order.userPhone}
-                        </p>
-
-
-                        <div className="flex items-center gap-2 mt-2">
-
-                          <p className="text-xs">
-                            UID: {order.uid}
-                          </p>
-
-                          <button
-                            onClick={()=>
-                              copyUID(order.uid)
-                            }
-                            className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-[10px] font-bold"
-                          >
-                            Copy UID
-                          </button>
-
-                        </div>
-
-
-                        <p className="text-xs">
-                          Quantity: {order.quantity}
-                        </p>
-
-
-                        <p className="text-xs text-gray-500">
-                          {order.date}
-                        </p>
-
-
-                        <div className="grid grid-cols-3 gap-2 mt-3">
-
-                          <button
-                            onClick={()=>
-                              changeOrderStatus(
-                                order.id,
-                                "Pending"
-                              )
-                            }
-                            className="bg-yellow-500 text-white py-2 rounded-lg text-[10px] font-bold"
-                          >
-                            Pending
-                          </button>
-
-                          <button
-                            onClick={()=>
-                              changeOrderStatus(
-                                order.id,
-                                "Complete"
-                              )
-                            }
-                            className="bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold"
-                          >
-                            Complete
-                          </button>
-
-                          <button
-                            onClick={()=>
-                              changeOrderStatus(
-                                order.id,
-                                "Cancelled"
-                              )
-                            }
-                            className="bg-red-500 text-white py-2 rounded-lg text-[10px] font-bold"
-                          >
-                            Cancel
-                          </button>
-
-                        </div>
-
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                )}
-
-
-                {/* ADMIN DEPOSITS */}
-
-                {adminSection==="deposits" && (
-
-                  <div>
-
-                    <h3 className="font-bold mb-3">
-                      💰 Deposit Requests
-                    </h3>
-
-
-                    {deposits.map(d=>(
-
-                      <div
-                        key={d.id}
-                        className="bg-white border rounded-xl p-4 mb-3"
-                      >
-
-                        <b>
-                          {d.userPhone}
-                        </b>
-
-                        <p className="text-sm mt-1">
-                          Amount: ৳{d.amount}
-                        </p>
-
-                        <p className="text-xs">
-                          Method: {d.method}
-                        </p>
-
-                        <p className="text-xs">
-                          Sender: {d.senderNumber}
-                        </p>
-
-                        <p className="text-xs">
-                          TrxID: {d.trxId}
-                        </p>
-
-                        <p className="text-xs mt-1">
-                          Status: {d.status}
-                        </p>
-
-
-                        {d.status==="Pending" && (
-
-                          <div className="flex gap-2 mt-3">
-
-                            <button
-                              onClick={()=>
-                                approveDeposit(d)
-                              }
-                              className="flex-1 bg-green-600 text-white py-2 rounded-lg text-xs font-bold"
-                            >
-                              Approve + Balance
-                            </button>
-
-                            <button
-                              onClick={()=>
-                                cancelDeposit(d.id)
-                              }
-                              className="flex-1 bg-red-500 text-white py-2 rounded-lg text-xs font-bold"
-                            >
-                              Cancel
-                            </button>
-
-                          </div>
-
-                        )}
-
-                      </div>
-
-                    ))}
-
-                  </div>
-
-                )}
-
-
-                {/* ADMIN CUSTOMERS */}
-
-                {adminSection==="customers" && (
-
-                  <div>
-
-                    <h3 className="font-bold mb-3">
-                      👤 Customers
-                    </h3>
-
-
-                    {users.map(user=>(
-
-                      <div
-                        key={user.id}
-                        className="bg-white border rounded-xl p-4 mb-3"
-                      >
-
-                        <b>
-                          {user.phone}
-                        </b>
-
-                        <p className="text-xs mt-1">
-                          Balance: ৳{user.balance||0}
-                        </p>
-
-                        <p className="text-xs">
-                          Total Spend: ৳{user.totalSpend||0}
-                        </p>
-
-                        <p className="text-[10px] text-gray-400">
-                          Registered: {user.createdAt}
-                        </p>
-
-
-                        <button
-                          onClick={()=>{
-                            setCustomerSearch(user.phone);
-                            setAdminSection("dashboard");
-                          }}
-                          className="mt-2 bg-indigo-600 text-white px-3 py-2 rounded-lg text-xs"
-                        >
-                          Manage Balance
-                        </button>
-
-                      </div>
-
-                    ))}
-
-
-                    <div className="bg-white border rounded-2xl p-4 mt-4">
-
-                      <h3 className="font-bold mb-3">
-                        💳 Add Customer Balance
-                      </h3>
-
-                      <input
-                        value={customerSearch}
-                        onChange={e=>
-                          setCustomerSearch(e.target.value)
-                        }
-                        placeholder="Customer Phone"
-                        className="w-full border rounded-xl p-3 mb-2"
-                      />
-
-                      <input
-                        type="number"
-                        value={balanceAmount}
-                        onChange={e=>
-                          setBalanceAmount(e.target.value)
-                        }
-                        placeholder="Amount"
-                        className="w-full border rounded-xl p-3 mb-2"
-                      />
-
-                      <button
-                        onClick={addBalance}
-                        className="w-full bg-green-600 text-white font-bold py-3 rounded-xl"
-                      >
-                        Add Balance
-                      </button>
-
-                    </div>
-
-                  </div>
-
-                )}
-
-              </div>
-
-            )}
-
-          </div>
-
-        )}
-
-      </main>
-
-
-      {/* =================================================
-         FLOATING SUPPORT WIDGET (WHATSAPP & TELEGRAM)
-      ================================================= */}
-
-      <div className="fixed bottom-20 right-4 z-50 flex flex-col items-end">
-        {supportOpen && (
-          <div className="flex flex-col gap-2 mb-3 items-end">
-            {/* WhatsApp */}
-            <a
-              href={`https://wa.me/${settings.whatsappNumber}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-green-500 text-white p-3 rounded-full shadow-lg hover:bg-green-600 transition"
-              title="WhatsApp Support"
-            >
-              <span className="text-xs font-bold bg-white text-green-600 px-2 py-0.5 rounded-full shadow">WhatsApp</span>
-              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
-            </a>
-
-            {/* Telegram */}
-            <a
-              href={settings.telegramUsername ? `https://t.me/${settings.telegramUsername.replace('@','')}` : '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e)=>{
-                if(!settings.telegramUsername){
-                  e.preventDefault();
-                  alert('Telegram username সেট করা নেই');
-                }
-              }}
-              className="flex items-center gap-2 bg-sky-500 text-white p-3 rounded-full shadow-lg hover:bg-sky-600 transition"
-              title="Telegram Support"
-            >
-              <span className="text-xs font-bold bg-white text-sky-500 px-2 py-0.5 rounded-full shadow">Telegram</span>
-              <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.121l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.832.943z"/></svg>
-            </a>
-          </div>
-        )}
-
-        <button
-          onClick={()=>setSupportOpen(!supportOpen)}
-          className="w-14 h-14 bg-purple-600 text-white rounded-full shadow-2xl flex items-center justify-center focus:outline-none hover:bg-purple-700 transition"
-          style={{
-            boxShadow: '0 0 0 4px rgba(147, 51, 234, 0.2), 0 0 0 8px rgba(147, 51, 234, 0.1)'
-          }}
-        >
-          {supportOpen ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
-          ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 18v-6a9 9 0 0118 0v6M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
-          )}
-        </button>
-      </div>
-
-
-      {/* =================================================
-         BOTTOM NAV
-      ================================================= */}
-
-      <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t flex justify-around py-3 z-40">
-
-        <button
-          onClick={()=>setTab("home")}
-          className={`text-xs ${
-            tab==="home"
-            ?"text-indigo-600 font-bold"
-            :"text-gray-500"
-          }`}
-        >
-          🏠
-          <br/>
-          Home
-        </button>
-
-
-        <button
-          onClick={()=>setTab("deposit")}
-          className={`text-xs ${
-            tab==="deposit"
-            ?"text-indigo-600 font-bold"
-            :"text-gray-500"
-          }`}
-        >
-          💰
-          <br/>
-          Deposit
-        </button>
-
-
-        <button
-          onClick={()=>setTab("rewards")}
-          className={`text-xs ${
-            tab==="rewards"
-            ?"text-indigo-600 font-bold"
-            :"text-gray-500"
-          }`}
-        >
-          🏆
-          <br/>
-          Rewards
-        </button>
-
-
-        <button
-          onClick={()=>setTab("orders")}
-          className={`text-xs ${
-            tab==="orders"
-            ?"text-indigo-600 font-bold"
-            :"text-gray-500"
-          }`}
-        >
-          📦
-          <br/>
-          Orders
-        </button>
-
-
-        <button
-          onClick={logout}
-          className="text-xs text-red-500"
-        >
-          🚪
-          <br/>
-          Logout
-        </button>
-
-      </nav>
-
-    </div>
-
-  );
-
+            <button onclick="switchTab('admin')" class="bg-gray-900 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold">Admin</button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="p-4 flex-1 overflow-y-auto" id="main-content">
+        <!-- Dynamic content -->
+    </main>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t flex justify-around py-2.5 z-30 hide">
+        <button onclick="switchTab('home')" id="nav-home" class="text-xs text-center text-indigo-600 font-bold">🏠<br>Home</button>
+        <button onclick="switchTab('deposit')" id="nav-deposit" class="text-xs text-center text-gray-500">💰<br>Deposit</button>
+        <button onclick="switchTab('rewards')" id="nav-rewards" class="text-xs text-center text-gray-500">🏆<br>Rewards</button>
+        <button onclick="switchTab('orders')" id="nav-orders" class="text-xs text-center text-gray-500">📦<br>Orders</button>
+        <button onclick="logout()" class="text-xs text-center text-red-500">🚪<br>Logout</button>
+    </nav>
+</div>
+
+<script>
+const ADMIN_PASSWORD = "264891";
+
+let db = {
+    settings: JSON.parse(localStorage.getItem("tb_settings")) || {
+        shopName: "TOPUP BUZZ",
+        paymentNumber: "01994835545",
+        whatsappNumber: "8801994835545",
+        notice: "কম মূল্যে দ্রুত ও সহজে TopUp করুন।"
+    },
+    packages: JSON.parse(localStorage.getItem("tb_packages")) || [
+        {id:1, name:"25 Diamonds", price:26, category:"diamond", active:true},
+        {id:2, name:"50 Diamonds", price:39, category:"diamond", active:true},
+        {id:3, name:"115 Diamonds", price:95, category:"diamond", active:true},
+        {id:4, name:"240 Diamonds", price:169, category:"diamond", active:true},
+        {id:5, name:"Weekly Membership", price:165, category:"weekly", active:true},
+        {id:6, name:"Weekly Lite", price:48, category:"weekly_lite", active:true},
+        {id:7, name:"Monthly Membership", price:810, category:"monthly", active:true}
+    ],
+    users: JSON.parse(localStorage.getItem("tb_users")) || [],
+    orders: JSON.parse(localStorage.getItem("tb_orders")) || [],
+    deposits: JSON.parse(localStorage.getItem("tb_deposits")) || [],
+    currentUserId: localStorage.getItem("tb_current_user") ? JSON.parse(localStorage.getItem("tb_current_user")).id : null,
+    currentTab: "home",
+    authMode: "login",
+    selectedCategory: "diamond",
+    selectedPkgId: null,
+    orderQty: 1,
+    adminLogged: false,
+    adminSection: "dashboard"
+};
+
+function saveData() {
+    localStorage.setItem("tb_settings", JSON.stringify(db.settings));
+    localStorage.setItem("tb_packages", JSON.stringify(db.packages));
+    localStorage.setItem("tb_users", JSON.stringify(db.users));
+    localStorage.setItem("tb_orders", JSON.stringify(db.orders));
+    localStorage.setItem("tb_deposits", JSON.stringify(db.deposits));
+    if(db.currentUserId) {
+        const user = db.users.find(u => u.id === db.currentUserId);
+        localStorage.setItem("tb_current_user", JSON.stringify(user));
+    } else {
+        localStorage.removeItem("tb_current_user");
+    }
 }
 
+function getCurrentUser() {
+    return db.users.find(u => u.id === db.currentUserId) || null;
+}
 
-ReactDOM
-  .createRoot(
-    document.getElementById("root")
-  )
-  .render(<App/>);
+function switchTab(tab) {
+    db.currentTab = tab;
+    render();
+}
 
+function render() {
+    const user = getCurrentUser();
+    const main = document.getElementById("main-content");
+    const nav = document.getElementById("bottom-nav");
+    const balanceBadge = document.getElementById("user-balance-badge");
+    const shopTitle = document.getElementById("shop-title");
+    
+    shopTitle.innerText = db.settings.shopName;
+
+    if (!user && db.currentTab !== "admin") {
+        nav.classList.add("hide");
+        balanceBadge.classList.add("hide");
+        main.innerHTML = renderAuth();
+        return;
+    }
+
+    if (user && db.currentTab !== "admin") {
+        nav.classList.remove("hide");
+        balanceBadge.classList.remove("hide");
+        document.getElementById("header-balance").innerText = user.balance || 0;
+        
+        ["home", "deposit", "rewards", "orders"].forEach(t => {
+            const el = document.getElementById(`nav-${t}`);
+            if(el) {
+                el.className = `text-xs text-center ${db.currentTab === t ? 'text-indigo-600 font-bold' : 'text-gray-500'}`;
+            }
+        });
+    }
+
+    if (db.currentTab === "home") main.innerHTML = renderHome();
+    else if (db.currentTab === "deposit") main.innerHTML = renderDeposit();
+    else if (db.currentTab === "rewards") main.innerHTML = renderRewards();
+    else if (db.currentTab === "orders") main.innerHTML = renderOrders();
+    else if (db.currentTab === "admin") {
+        nav.classList.add("hide");
+        balanceBadge.classList.add("hide");
+        main.innerHTML = renderAdmin();
+    }
+}
+
+function renderAuth() {
+    return `
+        <div class="flex flex-col justify-center items-center py-10">
+            <div class="bg-white w-full rounded-2xl p-6">
+                <h2 class="text-2xl font-bold text-indigo-700 text-center">${db.settings.shopName}</h2>
+                <p class="text-center text-gray-500 text-sm mt-1">${db.authMode === 'login' ? 'Customer Login' : 'Create Account'}</p>
+                
+                <div class="mt-6 space-y-3">
+                    <input type="text" id="auth-phone" placeholder="01XXXXXXXXX" class="w-full border rounded-xl p-3 text-sm focus:outline-indigo-600">
+                    <input type="password" id="auth-pass" placeholder="Password" class="w-full border rounded-xl p-3 text-sm focus:outline-indigo-600">
+                    ${db.authMode === 'register' ? `<input type="password" id="auth-conf-pass" placeholder="Confirm Password" class="w-full border rounded-xl p-3 text-sm focus:outline-indigo-600">` : ''}
+                    
+                    <button onclick="handleAuth()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm">
+                        ${db.authMode === 'login' ? 'Login' : 'Register'}
+                    </button>
+                    
+                    <button onclick="toggleAuthMode()" class="w-full text-indigo-600 text-xs text-center mt-2">
+                        ${db.authMode === 'login' ? 'Create New Account' : 'Already have account? Login'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function toggleAuthMode() {
+    db.authMode = db.authMode === 'login' ? 'register' : 'login';
+    render();
+}
+
+function handleAuth() {
+    const phone = document.getElementById("auth-phone").value.trim();
+    const pass = document.getElementById("auth-pass").value.trim();
+
+    if (!/^01[0-9]{9}$/.test(phone)) {
+        alert("সঠিক ১১ সংখ্যার ফোন নম্বর দিন");
+        return;
+    }
+    if (pass.length < 6) {
+        alert("Password কমপক্ষে ৬ অক্ষরের হতে হবে");
+        return;
+    }
+
+    if (db.authMode === 'register') {
+        const confPass = document.getElementById("auth-conf-pass").value.trim();
+        if (pass !== confPass) {
+            alert("Password মিলছে না");
+            return;
+        }
+        if (db.users.some(u => u.phone === phone)) {
+            alert("এই নম্বর দিয়ে ইতিমধ্যে অ্যাকাউন্ট রয়েছে");
+            return;
+        }
+        const newUser = {
+            id: Date.now(),
+            phone,
+            password: pass,
+            balance: 0,
+            totalSpend: 0,
+            createdAt: new Date().toLocaleDateString()
+        };
+        db.users.push(newUser);
+        db.currentUserId = newUser.id;
+        saveData();
+        render();
+    } else {
+        const user = db.users.find(u => u.phone === phone && u.password === pass);
+        if (!user) {
+            alert("নম্বর অথবা পাসওয়ার্ড ভুল হয়েছে");
+            return;
+        }
+        db.currentUserId = user.id;
+        saveData();
+        render();
+    }
+}
+
+function logout() {
+    db.currentUserId = null;
+    db.currentTab = "home";
+    saveData();
+    render();
+}
+
+function renderHome() {
+    const categories = [
+        ["diamond", "💎 Diamond"],
+        ["weekly", "👑 Weekly"],
+        ["weekly_lite", "⚡ Weekly Lite"],
+        ["monthly", "📅 Monthly"]
+    ];
+
+    const pkgs = db.packages.filter(p => p.category === db.selectedCategory && p.active !== false);
+    const selectedPkg = db.packages.find(p => p.id === db.selectedPkgId);
+    const totalPrice = selectedPkg ? selectedPkg.price * db.orderQty : 0;
+
+    return `
+        <div>
+            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-4 mb-4 shadow">
+                <h2 class="text-lg font-bold">সেরা TopUp সেবা 🔥</h2>
+                <p class="text-xs mt-1 opacity-90">${db.settings.notice}</p>
+            </div>
+
+            <div class="flex gap-2 overflow-x-auto pb-2 mb-3">
+                ${categories.map(c => `
+                    <button onclick="setCategory('${c[0]}')" class="whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold ${db.selectedCategory === c[0] ? 'bg-indigo-600 text-white' : 'bg-white border text-gray-700'}">
+                        ${c[1]}
+                    </button>
+                `).join('')}
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5">
+                ${pkgs.map(pkg => `
+                    <div onclick="selectPackage(${pkg.id})" class="bg-white border rounded-xl p-3 cursor-pointer shadow-sm ${db.selectedPkgId === pkg.id ? 'border-indigo-600 ring-2 ring-indigo-100 bg-indigo-50/20' : ''}">
+                        <div class="font-bold text-xs text-gray-800">${pkg.name}</div>
+                        <div class="text-indigo-600 font-bold text-sm mt-2">৳ ${pkg.price}</div>
+                    </div>
+                `).join('')}
+            </div>
+
+            ${selectedPkg ? `
+                <div class="bg-white border rounded-2xl p-4 mt-5 shadow-sm">
+                    <h3 class="font-bold text-sm mb-3">📦 Order Confirmation</h3>
+                    <div class="bg-indigo-50 p-2.5 rounded-xl mb-3 flex justify-between items-center">
+                        <div>
+                            <div class="font-bold text-xs text-indigo-900">${selectedPkg.name}</div>
+                            <div class="text-[10px] text-gray-500">মূল্য: ৳${selectedPkg.price} প্রতি প্যাক</div>
+                        </div>
+                    </div>
+
+                    <label class="text-[11px] font-bold text-gray-600">পরিমাণ (Quantity)</label>
+                    <select onchange="changeQty(this.value)" class="w-full border rounded-xl p-2.5 text-xs mt-1 mb-3 bg-white">
+                        ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${db.orderQty === n ? 'selected' : ''}>${n} টি</option>`).join('')}
+                    </select>
+
+                    <label class="text-[11px] font-bold text-gray-600">Free Fire UID</label>
+                    <input type="text" id="order-uid" placeholder="আপনার UID লিখুন" class="w-full border rounded-xl p-2.5 text-xs mt-1 mb-3">
+
+                    <div class="bg-gray-100 p-3 rounded-xl flex justify-between items-center text-xs mb-3">
+                        <span class="font-bold">মোট খরচ:</span>
+                        <span class="font-bold text-indigo-700 text-sm">৳ ${totalPrice}</span>
+                    </div>
+
+                    <button onclick="submitOrder()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs">
+                        Confirm Order 🚀
+                    </button>
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function setCategory(cat) {
+    db.selectedCategory = cat;
+    db.selectedPkgId = null;
+    render();
+}
+
+function selectPackage(id) {
+    db.selectedPkgId = id;
+    db.orderQty = 1;
+    render();
+}
+
+function changeQty(val) {
+    db.orderQty = Number(val);
+}
+
+function submitOrder() {
+    const uid = document.getElementById("order-uid").value.trim();
+    if (!uid) {
+        alert("দয়া করে Free Fire UID দিন");
+        return;
+    }
+    const pkg = db.packages.find(p => p.id === db.selectedPkgId);
+    const user = getCurrentUser();
+    const total = pkg.price * db.orderQty;
+
+    if (user.balance < total) {
+        alert("পর্যাপ্ত ব্যালেন্স নেই। দয়া করে আগে ডিপোজিট করুন।");
+        switchTab('deposit');
+        return;
+    }
+
+    user.balance -= total;
+    user.totalSpend = (user.totalSpend || 0) + total;
+
+    const newOrder = {
+        id: Date.now(),
+        userId: user.id,
+        userPhone: user.phone,
+        packageName: pkg.name,
+        quantity: db.orderQty,
+        total: total,
+        uid: uid,
+        status: "Pending",
+        date: new Date().toLocaleString()
+    };
+
+    db.orders.unshift(newOrder);
+    db.selectedPkgId = null;
+    db.orderQty = 1;
+    saveData();
+    alert("অর্ডার সফলভাবে সাবমিট হয়েছে!");
+    render();
+}
+
+function renderDeposit() {
+    return `
+        <div>
+            <h2 class="text-base font-bold mb-3">💰 Balance Deposit</h2>
+            <div class="bg-white border rounded-2xl p-4 shadow-sm space-y-3">
+                <div>
+                    <label class="text-[11px] font-bold text-gray-600">টাকার পরিমাণ</label>
+                    <input type="number" id="dep-amount" placeholder="যেমন: 500" class="w-full border rounded-xl p-2.5 text-xs mt-1">
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-bold text-gray-600">পেমেন্ট মাধ্যম</label>
+                    <select id="dep-method" class="w-full border rounded-xl p-2.5 text-xs mt-1 bg-white">
+                        <option value="bKash Personal">bKash Personal</option>
+                        <option value="Nagad Personal">Nagad Personal</option>
+                    </select>
+                </div>
+
+                <div class="bg-indigo-50 p-3 rounded-xl">
+                    <p class="text-[10px] text-gray-500">টাকা পাঠানোর নম্বর:</p>
+                    <p class="text-sm font-bold text-indigo-700">${db.settings.paymentNumber}</p>
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-bold text-gray-600">প্রেরক নম্বর (যে নম্বর থেকে টাকা পাঠিয়েছেন)</label>
+                    <input type="text" id="dep-sender" placeholder="01XXXXXXXXX" class="w-full border rounded-xl p-2.5 text-xs mt-1">
+                </div>
+
+                <div>
+                    <label class="text-[11px] font-bold text-gray-600">Transaction ID (TrxID)</label>
+                    <input type="text" id="dep-trx" placeholder="TrxID দিন" class="w-full border rounded-xl p-2.5 text-xs mt-1">
+                </div>
+
+                <button onclick="submitDeposit()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs">
+                    Deposit Submit
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function submitDeposit() {
+    const amount = Number(document.getElementById("dep-amount").value);
+    const method = document.getElementById("dep-method").value;
+    const sender = document.getElementById("dep-sender").value.trim();
+    const trx = document.getElementById("dep-trx").value.trim();
+
+    if (!amount || amount <= 0 || !sender || !trx) {
+        alert("সব তথ্য সঠিকভাবে পূরণ করুন");
+        return;
+    }
+
+    const user = getCurrentUser();
+    const deposit = {
+        id: Date.now(),
+        userId: user.id,
+        userPhone: user.phone,
+        amount,
+        method,
+        senderNumber: sender,
+        trxId: trx,
+        status: "Pending",
+        date: new Date().toLocaleString()
+    };
+
+    db.deposits.unshift(deposit);
+    saveData();
+
+    const msg = `NEW DEPOSIT\nUser: ${user.phone}\nAmount: ৳${amount}\nMethod: ${method}\nSender: ${sender}\nTrxID: ${trx}`;
+    window.open(`https://wa.me/${db.settings.whatsappNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+
+    alert("ডিপোজিট রিকোয়েস্ট সফলভাবে জমা হয়েছে।");
+    switchTab('home');
+}
+
+function renderRewards() {
+    const user = getCurrentUser();
+    const spend = user.totalSpend || 0;
+    const ranks = [
+        {name: "Heroic", req: 1000, gift: "50 Diamonds"},
+        {name: "Platinum", req: 5000, gift: "100 Diamonds"},
+        {name: "Master", req: 10000, gift: "Weekly Lite"}
+    ];
+
+    return `
+        <div>
+            <h2 class="text-base font-bold mb-3">🏆 Rewards & Ranks</h2>
+            <div class="space-y-3">
+                ${ranks.map(r => {
+                    const unlocked = spend >= r.req;
+                    return `
+                        <div class="bg-white border rounded-2xl p-4 shadow-sm flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold text-xs">${r.name}</h3>
+                                <p class="text-[10px] text-gray-500">Requirement: ৳${r.req}</p>
+                                <p class="text-[10px] text-indigo-600 font-bold mt-1">🎁 উপহার: ${r.gift}</p>
+                            </div>
+                            <span class="text-[10px] font-bold px-2.5 py-1 rounded-full ${unlocked ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
+                                ${unlocked ? 'Unlocked' : 'Locked'}
+                            </span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function renderOrders() {
+    const user = getCurrentUser();
+    const userOrders = db.orders.filter(o => o.userId === user.id);
+
+    return `
+        <div>
+            <h2 class="text-base font-bold mb-3">📦 My Orders</h2>
+            ${userOrders.length === 0 ? `<div class="text-center text-gray-400 text-xs py-10">কোনো অর্ডার পাওয়া যায়নি</div>` : ''}
+            <div class="space-y-2.5">
+                ${userOrders.map(o => `
+                    <div class="bg-white border rounded-xl p-3 shadow-sm text-xs">
+                        <div class="flex justify-between font-bold">
+                            <span>${o.packageName} (${o.quantity}টি)</span>
+                            <span class="text-indigo-600">৳${o.total}</span>
+                        </div>
+                        <div class="text-gray-500 text-[11px] mt-1">UID: ${o.uid}</div>
+                        <div class="text-gray-400 text-[10px]">${o.date}</div>
+                        <div class="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold ${o.status === 'Complete' ? 'bg-green-100 text-green-700' : o.status === 'Cancelled' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}">
+                            ${o.status}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function renderAdmin() {
+    if (!db.adminLogged) {
+        return `
+            <div class="py-10">
+                <div class="bg-white border rounded-2xl p-5 shadow-sm">
+                    <h2 class="text-base font-bold text-center mb-3">🔐 Admin Login</h2>
+                    <input type="password" id="admin-pass-input" placeholder="Admin Password" class="w-full border rounded-xl p-2.5 text-xs mb-3">
+                    <button onclick="loginAdmin()" class="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs">Login</button>
+                    <button onclick="switchTab('home')" class="w-full text-gray-500 text-xs mt-3 text-center">Back to Home</button>
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div>
+            <div class="bg-indigo-600 text-white rounded-xl p-3 flex justify-between items-center mb-3">
+                <span class="font-bold text-xs">Admin Panel</span>
+                <button onclick="db.adminLogged=false; render();" class="bg-red-500 px-2 py-1 rounded text-[10px]">Logout</button>
+            </div>
+
+            <div class="grid grid-cols-3 gap-1.5 mb-3 text-[11px]">
+                <button onclick="setAdminSec('dashboard')" class="p-2 rounded-lg font-bold ${db.adminSection==='dashboard'?'bg-indigo-600 text-white':'bg-white border'}">Dashboard</button>
+                <button onclick="setAdminSec('packages')" class="p-2 rounded-lg font-bold ${db.adminSection==='packages'?'bg-indigo-600 text-white':'bg-white border'}">Packages</button>
+                <button onclick="setAdminSec('orders')" class="p-2 rounded-lg font-bold ${db.adminSection==='orders'?'bg-indigo-600 text-white':'bg-white border'}">Orders</button>
+                <button onclick="setAdminSec('deposits')" class="p-2 rounded-lg font-bold ${db.adminSection==='deposits'?'bg-indigo-600 text-white':'bg-white border'}">Deposits</button>
+                <button onclick="setAdminSec('customers')" class="p-2 rounded-lg font-bold ${db.adminSection==='customers'?'bg-indigo-600 text-white':'bg-white border'}">Customers</button>
+                <button onclick="setAdminSec('settings')" class="p-2 rounded-lg font-bold ${db.adminSection==='settings'?'bg-indigo-600 text-white':'bg-white border'}">Settings</button>
+            </div>
+
+            <div id="admin-body">
+                ${renderAdminContent()}
+            </div>
+        </div>
+    `;
+}
+
+function loginAdmin() {
+    const val = document.getElementById("admin-pass-input").value;
+    if (val === ADMIN_PASSWORD) {
+        db.adminLogged = true;
+        render();
+    } else {
+        alert("ভুল পাসওয়ার্ড");
+    }
+}
+
+function setAdminSec(sec) {
+    db.adminSection = sec;
+    render();
+}
+
+function renderAdminContent() {
+    if (db.adminSection === 'dashboard') {
+        const pendingOrders = db.orders.filter(o => o.status === 'Pending').length;
+        const pendingDeposits = db.deposits.filter(d => d.status === 'Pending').length;
+        return `
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <div class="bg-white border p-3 rounded-xl">Users: <span class="font-bold">${db.users.length}</span></div>
+                <div class="bg-white border p-3 rounded-xl">Orders: <span class="font-bold">${db.orders.length}</span></div>
+                <div class="bg-white border p-3 rounded-xl">Pending Orders: <span class="font-bold text-amber-600">${pendingOrders}</span></div>
+                <div class="bg-white border p-3 rounded-xl">Pending Deposits: <span class="font-bold text-amber-600">${pendingDeposits}</span></div>
+            </div>
+            <button onclick="switchTab('home')" class="mt-4 w-full bg-gray-900 text-white py-2.5 rounded-xl text-xs">Go to Website</button>
+        `;
+    }
+    if (db.adminSection === 'packages') {
+        return `
+            <div class="bg-white border p-3 rounded-xl mb-3 text-xs space-y-2">
+                <div class="font-bold">Add Package</div>
+                <input type="text" id="new-pkg-name" placeholder="Name" class="w-full border p-2 rounded">
+                <input type="number" id="new-pkg-price" placeholder="Price" class="w-full border p-2 rounded">
+                <select id="new-pkg-cat" class="w-full border p-2 rounded">
+                    <option value="diamond">Diamond</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="weekly_lite">Weekly Lite</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+                <button onclick="addNewPackage()" class="w-full bg-green-600 text-white py-2 rounded font-bold">Add</button>
+            </div>
+            <div class="space-y-2 text-xs">
+                ${db.packages.map(p => `
+                    <div class="bg-white border p-2.5 rounded-xl flex justify-between items-center">
+                        <div>
+                            <div class="font-bold">${p.name} - ৳${p.price}</div>
+                            <div class="text-[10px] text-gray-500">${p.category}</div>
+                        </div>
+                        <button onclick="deletePkg(${p.id})" class="bg-red-500 text-white px-2 py-1 rounded text-[10px]">Delete</button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    if (db.adminSection === 'orders') {
+        return `
+            <div class="space-y-2.5 text-xs">
+                ${db.orders.map(o => `
+                    <div class="bg-white border p-3 rounded-xl">
+                        <div class="font-bold">${o.packageName} - ৳${o.total}</div>
+                        <div class="text-[11px] text-gray-600">User: ${o.userPhone} | UID: ${o.uid}</div>
+                        <div class="text-[10px] text-gray-400">${o.date}</div>
+                        <div class="flex gap-1 mt-2">
+                            <button onclick="setOrderStatus(${o.id}, 'Pending')" class="bg-amber-500 text-white px-2 py-1 rounded text-[10px]">Pending</button>
+                            <button onclick="setOrderStatus(${o.id}, 'Complete')" class="bg-green-600 text-white px-2 py-1 rounded text-[10px]">Complete</button>
+                            <button onclick="setOrderStatus(${o.id}, 'Cancelled')" class="bg-red-500 text-white px-2 py-1 rounded text-[10px]">Cancel</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    if (db.adminSection === 'deposits') {
+        return `
+            <div class="space-y-2.5 text-xs">
+                ${db.deposits.map(d => `
+                    <div class="bg-white border p-3 rounded-xl">
+                        <div class="font-bold">${d.userPhone} - ৳${d.amount}</div>
+                        <div class="text-[11px]">Method: ${d.method} | Trx: ${d.trxId}</div>
+                        <div class="text-[10px] text-gray-400">Sender: ${d.senderNumber} | Status: ${d.status}</div>
+                        ${d.status === 'Pending' ? `
+                            <div class="flex gap-2 mt-2">
+                                <button onclick="approveDeposit(${d.id})" class="bg-green-600 text-white px-3 py-1 rounded text-[10px]">Approve</button>
+                                <button onclick="cancelDeposit(${d.id})" class="bg-red-500 text-white px-3 py-1 rounded text-[10px]">Cancel</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    if (db.adminSection === 'customers') {
+        return `
+            <div class="space-y-2.5 text-xs">
+                ${db.users.map(u => `
+                    <div class="bg-white border p-3 rounded-xl flex justify-between items-center">
+                        <div>
+                            <div class="font-bold">${u.phone}</div>
+                            <div class="text-[11px] text-indigo-600">Balance: ৳${u.balance || 0}</div>
+                        </div>
+                        <button onclick="addBalancePrompt(${u.id})" class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px]">Add Balance</button>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    if (db.adminSection === 'settings') {
+        return `
+            <div class="bg-white border p-3 rounded-xl text-xs space-y-2">
+                <div class="font-bold">Settings</div>
+                <label>Shop Name</label>
+                <input type="text" id="set-name" value="${db.settings.shopName}" class="w-full border p-2 rounded">
+                <label>Payment Number</label>
+                <input type="text" id="set-pay" value="${db.settings.paymentNumber}" class="w-full border p-2 rounded">
+                <label>WhatsApp Number</label>
+                <input type="text" id="set-wa" value="${db.settings.whatsappNumber}" class="w-full border p-2 rounded">
+                <label>Notice</label>
+                <textarea id="set-notice" class="w-full border p-2 rounded">${db.settings.notice}</textarea>
+                <button onclick="saveSettings()" class="w-full bg-indigo-600 text-white py-2 rounded font-bold">Save Changes</button>
+            </div>
+        `;
+    }
+}
+
+function addNewPackage() {
+    const name = document.getElementById("new-pkg-name").value.trim();
+    const price = Number(document.getElementById("new-pkg-price").value);
+    const category = document.getElementById("new-pkg-cat").value;
+    if(!name || !price) {
+        alert("সব তথ্য দিন");
+        return;
+    }
+    db.packages.push({id: Date.now(), name, price, category, active: true});
+    saveData();
+    render();
+}
+
+function deletePkg(id) {
+    db.packages = db.packages.filter(p => p.id !== id);
+    saveData();
+    render();
+}
+
+function setOrderStatus(id, status) {
+    const o = db.orders.find(x => x.id === id);
+    if(o) {
+        o.status = status;
+        saveData();
+        render();
+    }
+}
+
+function approveDeposit(id) {
+    const d = db.deposits.find(x => x.id === id);
+    if(d && d.status === 'Pending') {
+        d.status = 'Approved';
+        const user = db.users.find(u => u.id === d.userId);
+        if(user) {
+            user.balance = (user.balance || 0) + d.amount;
+        }
+        saveData();
+        render();
+    }
+}
+
+function cancelDeposit(id) {
+    const d = db.deposits.find(x => x.id === id);
+    if(d) {
+        d.status = 'Cancelled';
+        saveData();
+        render();
+    }
+}
+
+function addBalancePrompt(userId) {
+    const amt = prompt("কত টাকা যোগ করতে চান?");
+    if(amt && !isNaN(amt)) {
+        const user = db.users.find(u => u.id === userId);
+        if(user) {
+            user.balance = (user.balance || 0) + Number(amt);
+            saveData();
+            render();
+        }
+    }
+}
+
+function saveSettings() {
+    db.settings.shopName = document.getElementById("set-name").value;
+    db.settings.paymentNumber = document.getElementById("set-pay").value;
+    db.settings.whatsappNumber = document.getElementById("set-wa").value;
+    db.settings.notice = document.getElementById("set-notice").value;
+    saveData();
+    alert("সেটিংস সংরক্ষিত হয়েছে!");
+    render();
+}
+
+render();
 </script>
-
 </body>
-</html
+</html>

@@ -12,7 +12,7 @@
 </head>
 <body class="bg-gray-100 flex justify-center">
 
-<div class="w-full max-w-md bg-white min-h-screen shadow-xl relative pb-20 flex flex-col justify-between" id="app-container">
+<div class="w-full max-w-md bg-white min-h-screen shadow-xl relative pb-24 flex flex-col justify-between" id="app-container">
     
     <!-- HEADER -->
     <header class="bg-white border-b px-4 py-3 flex justify-between items-center sticky top-0 z-30">
@@ -33,6 +33,16 @@
         <!-- Dynamic content -->
     </main>
 
+    <!-- FLOATING SUPPORT BUTTONS -->
+    <div id="floating-support" class="fixed bottom-16 right-4 z-40 flex flex-col gap-2 hide">
+        <a id="support-wa-btn" href="#" target="_blank" class="bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-lg transition-transform transform hover:scale-105" title="WhatsApp Support">
+            💬
+        </a>
+        <a id="support-tg-btn" href="#" target="_blank" class="bg-sky-500 hover:bg-sky-600 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-lg transition-transform transform hover:scale-105" title="Telegram Support">
+            ✈️
+        </a>
+    </div>
+
     <!-- BOTTOM NAVIGATION -->
     <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t flex justify-around py-2.5 z-30 hide">
         <button onclick="switchTab('home')" id="nav-home" class="text-xs text-center text-indigo-600 font-bold">🏠<br>Home</button>
@@ -51,6 +61,7 @@ let db = {
         shopName: "TOPUP BUZZ",
         paymentNumber: "01994835545",
         whatsappNumber: "8801994835545",
+        telegramUsername: "frouptopup",
         notice: "কম মূল্যে দ্রুত ও সহজে TopUp করুন।"
     },
     packages: JSON.parse(localStorage.getItem("tb_packages")) || [
@@ -104,12 +115,18 @@ function render() {
     const nav = document.getElementById("bottom-nav");
     const balanceBadge = document.getElementById("user-balance-badge");
     const shopTitle = document.getElementById("shop-title");
+    const supportButtons = document.getElementById("floating-support");
     
     shopTitle.innerText = db.settings.shopName;
+    
+    // Update Support Links
+    document.getElementById("support-wa-btn").href = `https://wa.me/${db.settings.whatsappNumber}`;
+    document.getElementById("support-tg-btn").href = `https://t.me/${db.settings.telegramUsername}`;
 
     if (!user && db.currentTab !== "admin") {
         nav.classList.add("hide");
         balanceBadge.classList.add("hide");
+        supportButtons.classList.add("hide");
         main.innerHTML = renderAuth();
         return;
     }
@@ -117,6 +134,7 @@ function render() {
     if (user && db.currentTab !== "admin") {
         nav.classList.remove("hide");
         balanceBadge.classList.remove("hide");
+        supportButtons.classList.remove("hide");
         document.getElementById("header-balance").innerText = user.balance || 0;
         
         ["home", "deposit", "rewards", "orders"].forEach(t => {
@@ -134,6 +152,7 @@ function render() {
     else if (db.currentTab === "admin") {
         nav.classList.add("hide");
         balanceBadge.classList.add("hide");
+        supportButtons.classList.add("hide");
         main.innerHTML = renderAdmin();
     }
 }
@@ -635,6 +654,8 @@ function renderAdminContent() {
                 <input type="text" id="set-pay" value="${db.settings.paymentNumber}" class="w-full border p-2 rounded">
                 <label>WhatsApp Number</label>
                 <input type="text" id="set-wa" value="${db.settings.whatsappNumber}" class="w-full border p-2 rounded">
+                <label>Telegram Username/Link</label>
+                <input type="text" id="set-tg" value="${db.settings.telegramUsername || ''}" class="w-full border p-2 rounded">
                 <label>Notice</label>
                 <textarea id="set-notice" class="w-full border p-2 rounded">${db.settings.notice}</textarea>
                 <button onclick="saveSettings()" class="w-full bg-indigo-600 text-white py-2 rounded font-bold">Save Changes</button>
@@ -709,6 +730,7 @@ function saveSettings() {
     db.settings.shopName = document.getElementById("set-name").value;
     db.settings.paymentNumber = document.getElementById("set-pay").value;
     db.settings.whatsappNumber = document.getElementById("set-wa").value;
+    db.settings.telegramUsername = document.getElementById("set-tg").value;
     db.settings.notice = document.getElementById("set-notice").value;
     saveData();
     alert("সেটিংস সংরক্ষিত হয়েছে!");
@@ -718,4 +740,4 @@ function saveSettings() {
 render();
 </script>
 </body>
-</html>
+  </html>

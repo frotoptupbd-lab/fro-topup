@@ -193,18 +193,54 @@ function getStorage(key, fallback){
 
 
 /* =========================================================
-   DEFAULT SERVICES
+   DEFAULT SERVICES (Updated with new services)
 ========================================================= */
 
 const DEFAULT_SERVICES = [
     {
         id:"freefire",
-        name:"Free Fire",
+        name:"Free Fire UID",
         icon:"💎",
         image:"",
         type:"game",
         active:true,
-        description:"Free Fire Diamond ও Membership TopUp Service"
+        description:"Free Fire Diamond TopUp Service"
+    },
+    {
+        id:"weekly_lite",
+        name:"Weekly Lite",
+        icon:"🎟️",
+        image:"",
+        type:"game",
+        active:true,
+        description:"Free Fire Weekly Lite Membership"
+    },
+    {
+        id:"weekly",
+        name:"Weekly Membership",
+        icon:"🎫",
+        image:"",
+        type:"game",
+        active:true,
+        description:"Free Fire Weekly Membership TopUp"
+    },
+    {
+        id:"monthly",
+        name:"Monthly Membership",
+        icon:"👑",
+        image:"",
+        type:"game",
+        active:true,
+        description:"Free Fire Monthly Membership TopUp"
+    },
+    {
+        id:"ff_like",
+        name:"FF Like",
+        icon:"❤️",
+        image:"",
+        type:"game",
+        active:true,
+        description:"Free Fire Profile Like Boost Service"
     },
     {
         id:"facebook",
@@ -325,7 +361,7 @@ const DEFAULT_PRODUCTS = [
     },
     {
         id:106,
-        serviceId:"freefire",
+        serviceId:"weekly_lite",
         name:"Weekly Lite (2x)",
         price:165,
         category:"weekly_lite",
@@ -336,7 +372,7 @@ const DEFAULT_PRODUCTS = [
     },
     {
         id:107,
-        serviceId:"freefire",
+        serviceId:"weekly",
         name:"Weekly Membership",
         price:165,
         category:"weekly",
@@ -347,13 +383,24 @@ const DEFAULT_PRODUCTS = [
     },
     {
         id:108,
-        serviceId:"freefire",
+        serviceId:"monthly",
         name:"Monthly Membership",
         price:810,
         category:"monthly",
         active:true,
         inputType:"uid",
         description:"Free Fire Monthly Membership.",
+        rules:"সঠিক Free Fire UID দিতে হবে।"
+    },
+    {
+        id:109,
+        serviceId:"ff_like",
+        name:"FF Profile Like - 1000",
+        price:50,
+        category:"like",
+        active:true,
+        inputType:"uid",
+        description:"Free Fire Profile Like Increase.",
         rules:"সঠিক Free Fire UID দিতে হবে।"
     },
     {
@@ -1250,7 +1297,7 @@ function renderAdminContent(){
             <input id="service-icon" placeholder="Icon / Emoji যেমন 📘" class="w-full border p-2 rounded">
             
             <div>
-                <label class="text-[10px] text-gray-500 font-bold block mb-1">অথবা গ্যালারি থেকে ইমেজ আপলোড করুন:</label>
+                <label class="text-[10px] text-gray-500 font-bold block mb-1">গ্যালারি থেকে ইমেজ আপলোড করুন:</label>
                 <input type="file" id="service-img-file" accept="image/*" class="w-full border p-2 rounded text-[10px] bg-white">
             </div>
 
@@ -1437,7 +1484,6 @@ function editService(id){
     s.icon = icon.trim() || "🛍️";
     s.description = description.trim();
 
-    // Option to upload image during edit via prompt/file or keep existing
     const changeImg = confirm("গ্যালারি থেকে নতুন ছবি আপলোড করতে চান?");
     if(changeImg){
         const input = document.createElement("input");

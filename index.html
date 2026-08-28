@@ -1,743 +1,2986 @@
-!DOCTYPE html>
+<?php
+/*
+=========================================================
+ TOPUP BUZZ - SINGLE FILE PHP APPLICATION
+ PHP 8+
+ SQLite
+=========================================================
+
+ FEATURES
+ - User Registration / Login
+ - Cross-device login
+ - Free Fire products
+ - Facebook services
+ - TikTok services
+ - YouTube services
+ - YouTube Premium
+ - CapCut Premium
+ - Dynamic categories
+ - Dynamic products/packages
+ - Product descriptions
+ - Product requirements
+ - Quantity
+ - Custom order input/link
+ - Wallet balance
+ - Manual bKash/Nagad deposit
+ - Admin deposit approval
+ - Admin order management
+ - Admin customer management
+ - Admin settings
+ - SQLite auto database creation
+ - Password hashing
+ - Session based authentication
+=========================================================
+*/
+
+declare(strict_types=1);
+
+session_start();
+
+/* =====================================================
+   DATABASE
+===================================================== */
+
+$dbFile = __DIR__ . '/topupbuzz.sqlite';
+
+try {
+    $pdo = new PDO('sqlite:' . $dbFile);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    die('Database connection failed.');
+}
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function e(?string $value): string {
+    return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
+}
+
+function redirect(string $url): never {
+    header("Location: $url");
+    exit;
+}
+
+function csrf_token(): string {
+    if (empty($_SESSION['csrf'])) {
+        $_SESSION['csrf'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf'];
+}
+
+function verify_csrf(): void {
+    $token = $_POST['csrf'] ?? '';
+
+    if (
+        empty($_SESSION['csrf']) ||
+        !hash_equals($_SESSION['csrf'], $token)
+    ) {
+        die('Invalid security token.');
+    }
+}
+
+function flash(string $message, string $type = 'success'): void {
+    $_SESSION['flash'] = [
+        'message' => $message,
+        'type' => $type
+    ];
+}
+
+function get_flash(): ?array {
+    $flash = $_SESSION['flash'] ?? null;
+    unset($_SESSION['flash']);
+    return $flash;
+}
+
+function logged_in(): bool {
+    return !empty($_SESSION['user_id']);
+}
+
+function admin_logged(): bool {
+    return !empty($_SESSION['admin_logged']);
+}
+
+function current_user(PDO $pdo): ?array {
+    if (!logged_in()) {
+        return null;
+    }
+
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+
+    $user = $stmt->fetch();
+
+    return $user ?: null;
+}
+
+function require_login(): void {
+    if (!logged_in()) {
+        flash('অর্ডার করার আগে Login করুন।', 'error');
+        redirect('?page=login');
+    }
+}
+
+function require_admin(): void {
+    if (!admin_logged()) {
+        redirect('?page=admin_login');
+    }
+}
+
+/* =====================================================
+   AUTO DATABASE SETUP
+===================================================== */
+
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS settings (
+    id INTEGER PRIMARY KEY,
+    shop_name TEXT NOT NULL,
+    payment_number TEXT NOT NULL,
+    whatsapp_number TEXT NOT NULL,
+    telegram_username TEXT NOT NULL,
+    notice TEXT NOT NULL
+)
+");
+
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    icon TEXT NOT NULL,
+    description TEXT DEFAULT '',
+    active INTEGER DEFAULT 1,
+    sort_order INTEGER DEFAULT 0
+)
+");
+
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    price REAL NOT NULL,
+    description TEXT DEFAULT '',
+    requirements TEXT DEFAULT '',
+    input_label TEXT DEFAULT '',
+    active INTEGER DEFAULT 1,
+    sort_order INTEGER DEFAULT 0,
+    FOREIGN KEY(category_id) REFERENCES categories(id)
+)
+");
+
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    phone TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    balance REAL DEFAULT 0,
+    total_spend REAL DEFAULT 0,
+    referral_code TEXT UNIQUE,
+    created_at TEXT NOT NULL
+)
+");
+
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS deposits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    amount REAL NOT NULL,
+    method TEXT NOT NULL,
+    sender_number TEXT NOT NULL,
+    trx_id TEXT NOT NULL,
+    status TEXT DEFAULT 'Pending',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+)
+");
+
+$pdo->exec("
+CREATE TABLE IF NOT EXISTS orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    product_name TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    unit_price REAL NOT NULL,
+    total REAL NOT NULL,
+    target_value TEXT NOT NULL,
+    status TEXT DEFAULT 'Pending',
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+)
+");
+
+/* =====================================================
+   DEFAULT SETTINGS
+===================================================== */
+
+$count = $pdo->query("SELECT COUNT(*) FROM settings")->fetchColumn();
+
+if ((int)$count === 0) {
+    $stmt = $pdo->prepare("
+        INSERT INTO settings
+        (id, shop_name, payment_number, whatsapp_number, telegram_username, notice)
+        VALUES (1, ?, ?, ?, ?, ?)
+    ");
+
+    $stmt->execute([
+        'TOPUP BUZZ',
+        '01994835545',
+        '8801994835545',
+        'frouptopup',
+        'কম মূল্যে দ্রুত ও সহজে TopUp করুন।'
+    ]);
+}
+
+/* =====================================================
+   DEFAULT CATEGORIES
+===================================================== */
+
+$catCount = $pdo->query("SELECT COUNT(*) FROM categories")->fetchColumn();
+
+if ((int)$catCount === 0) {
+
+    $categories = [
+        ['Free Fire', 'free-fire', '💎', 'Free Fire Diamond এবং Membership'],
+        ['Facebook', 'facebook', '📘', 'Facebook marketing services'],
+        ['TikTok', 'tiktok', '🎵', 'TikTok marketing services'],
+        ['YouTube', 'youtube', '▶️', 'YouTube marketing services'],
+        ['YouTube Premium', 'youtube-premium', '▶️', 'YouTube Premium service'],
+        ['CapCut Premium', 'capcut-premium', '✂️', 'CapCut Premium service']
+    ];
+
+    $stmt = $pdo->prepare("
+        INSERT INTO categories
+        (name, slug, icon, description, active, sort_order)
+        VALUES (?, ?, ?, ?, 1, ?)
+    ");
+
+    foreach ($categories as $i => $cat) {
+        $stmt->execute([
+            $cat[0],
+            $cat[1],
+            $cat[2],
+            $cat[3],
+            $i
+        ]);
+    }
+}
+
+/* =====================================================
+   DEFAULT PRODUCTS
+===================================================== */
+
+$productCount = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
+
+if ((int)$productCount === 0) {
+
+    $catMap = [];
+
+    foreach ($pdo->query("SELECT id, slug FROM categories") as $row) {
+        $catMap[$row['slug']] = $row['id'];
+    }
+
+    $products = [
+
+        /* FREE FIRE */
+        ['free-fire', '25 Diamonds', 26, '25 Free Fire Diamonds.', 'Free Fire UID প্রয়োজন।', 'Free Fire UID'],
+        ['free-fire', '50 Diamonds', 39, '50 Free Fire Diamonds.', 'Free Fire UID প্রয়োজন।', 'Free Fire UID'],
+        ['free-fire', '115 Diamonds', 95, '115 Free Fire Diamonds.', 'Free Fire UID প্রয়োজন।', 'Free Fire UID'],
+        ['free-fire', '240 Diamonds', 169, '240 Free Fire Diamonds.', 'Free Fire UID প্রয়োজন।', 'Free Fire UID'],
+        ['free-fire', 'Weekly Lite', 48, 'Weekly Lite Membership.', 'Free Fire UID প্রয়োজন।', 'Free Fire UID'],
+        ['free-fire', 'Weekly Membership', 165, 'Weekly Membership.', 'Free Fire UID প্রয়োজন।', 'Free Fire UID'],
+        ['free-fire', 'Monthly Membership', 810, 'Monthly Membership.', 'Free Fire UID প্রয়োজন।', 'Free Fire UID'],
+
+        /* FACEBOOK */
+        ['facebook', 'Facebook Likes - Basic', 20, 'Facebook post/page marketing package.', 'Valid Facebook post/page link দিন।', 'Facebook Link'],
+        ['facebook', 'Facebook Followers - Basic', 50, 'Facebook audience growth package.', 'Valid Facebook profile/page link দিন।', 'Facebook Profile/Page Link'],
+        ['facebook', 'Facebook Views - Basic', 30, 'Facebook video marketing package.', 'Valid Facebook video link দিন।', 'Facebook Video Link'],
+        ['facebook', 'Facebook Comments - Basic', 80, 'Facebook engagement package.', 'Valid Facebook post link দিন।', 'Facebook Post Link'],
+
+        /* TIKTOK */
+        ['tiktok', 'TikTok Likes - Basic', 25, 'TikTok content marketing package.', 'Valid TikTok video link দিন।', 'TikTok Video Link'],
+        ['tiktok', 'TikTok Followers - Basic', 60, 'TikTok audience growth package.', 'Valid TikTok profile link দিন।', 'TikTok Profile Link'],
+        ['tiktok', 'TikTok Views - Basic', 30, 'TikTok video marketing package.', 'Valid TikTok video link দিন।', 'TikTok Video Link'],
+        ['tiktok', 'TikTok Comments - Basic', 90, 'TikTok engagement package.', 'Valid TikTok video link দিন।', 'TikTok Video Link'],
+
+        /* YOUTUBE */
+        ['youtube', 'YouTube Likes - Basic', 25, 'YouTube video marketing package.', 'Valid YouTube video link দিন।', 'YouTube Video Link'],
+        ['youtube', 'YouTube Subscribers - Basic', 80, 'YouTube audience growth package.', 'Valid YouTube channel link দিন।', 'YouTube Channel Link'],
+        ['youtube', 'YouTube Views - Basic', 40, 'YouTube video marketing package.', 'Valid YouTube video link দিন।', 'YouTube Video Link'],
+        ['youtube', 'YouTube Comments - Basic', 100, 'YouTube engagement package.', 'Valid YouTube video link দিন।', 'YouTube Video Link'],
+
+        /* PREMIUM */
+        ['youtube-premium', 'YouTube Premium 1 Month', 199, 'YouTube Premium subscription service.', 'Account information may be required according to your delivery method.', 'Required Information'],
+        ['youtube-premium', 'YouTube Premium 3 Months', 499, 'YouTube Premium subscription service.', 'Account information may be required according to your delivery method.', 'Required Information'],
+
+        ['capcut-premium', 'CapCut Premium 1 Month', 149, 'CapCut Premium service.', 'Required account information.', 'Required Information'],
+        ['capcut-premium', 'CapCut Premium 3 Months', 399, 'CapCut Premium service.', 'Required account information.', 'Required Information']
+    ];
+
+    $stmt = $pdo->prepare("
+        INSERT INTO products
+        (category_id, name, price, description, requirements, input_label, active, sort_order)
+        VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+    ");
+
+    foreach ($products as $i => $p) {
+        if (!isset($catMap[$p[0]])) continue;
+
+        $stmt->execute([
+            $catMap[$p[0]],
+            $p[1],
+            $p[2],
+            $p[3],
+            $p[4],
+            $p[5],
+            $i
+        ]);
+    }
+}
+
+/* =====================================================
+   SETTINGS
+===================================================== */
+
+$settings = $pdo->query("SELECT * FROM settings WHERE id = 1")->fetch();
+
+/* =====================================================
+   AUTH ACTIONS
+===================================================== */
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    verify_csrf();
+
+    $action = $_POST['action'] ?? '';
+
+    /* ---------------- REGISTER ---------------- */
+
+    if ($action === 'register') {
+
+        $phone = trim($_POST['phone'] ?? '');
+        $password = $_POST['password'] ?? '';
+        $confirm = $_POST['confirm'] ?? '';
+
+        if (!preg_match('/^01[0-9]{9}$/', $phone)) {
+            flash('সঠিক ১১ সংখ্যার বাংলাদেশি মোবাইল নম্বর দিন।', 'error');
+            redirect('?page=register');
+        }
+
+        if (strlen($password) < 6) {
+            flash('Password কমপক্ষে ৬ অক্ষরের হতে হবে।', 'error');
+            redirect('?page=register');
+        }
+
+        if ($password !== $confirm) {
+            flash('Password মিলছে না।', 'error');
+            redirect('?page=register');
+        }
+
+        $stmt = $pdo->prepare("SELECT id FROM users WHERE phone = ?");
+        $stmt->execute([$phone]);
+
+        if ($stmt->fetch()) {
+            flash('এই নম্বর দিয়ে ইতিমধ্যে account রয়েছে।', 'error');
+            redirect('?page=login');
+        }
+
+        $referral = strtoupper(bin2hex(random_bytes(4)));
+
+        $stmt = $pdo->prepare("
+            INSERT INTO users
+            (phone, password, balance, total_spend, referral_code, created_at)
+            VALUES (?, ?, 0, 0, ?, ?)
+        ");
+
+        $stmt->execute([
+            $phone,
+            password_hash($password, PASSWORD_DEFAULT),
+            $referral,
+            date('Y-m-d H:i:s')
+        ]);
+
+        $_SESSION['user_id'] = (int)$pdo->lastInsertId();
+
+        flash('Registration সফল হয়েছে।');
+        redirect('?page=home');
+    }
+
+    /* ---------------- LOGIN ---------------- */
+
+    if ($action === 'login') {
+
+        $phone = trim($_POST['phone'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE phone = ?");
+        $stmt->execute([$phone]);
+
+        $user = $stmt->fetch();
+
+        if (!$user || !password_verify($password, $user['password'])) {
+            flash('মোবাইল নম্বর অথবা Password ভুল।', 'error');
+            redirect('?page=login');
+        }
+
+        session_regenerate_id(true);
+        $_SESSION['user_id'] = (int)$user['id'];
+
+        flash('Login সফল হয়েছে।');
+        redirect('?page=home');
+    }
+
+    /* ---------------- LOGOUT ---------------- */
+
+    if ($action === 'logout') {
+        unset($_SESSION['user_id']);
+        flash('Logout হয়েছে।');
+        redirect('?page=home');
+    }
+
+    /* ---------------- DEPOSIT ---------------- */
+
+    if ($action === 'deposit') {
+
+        require_login();
+
+        $amount = (float)($_POST['amount'] ?? 0);
+        $method = trim($_POST['method'] ?? '');
+        $sender = trim($_POST['sender_number'] ?? '');
+        $trx = trim($_POST['trx_id'] ?? '');
+
+        if ($amount <= 0 || $sender === '' || $trx === '') {
+            flash('সব তথ্য সঠিকভাবে পূরণ করুন।', 'error');
+            redirect('?page=deposit');
+        }
+
+        if (!in_array($method, ['bKash Personal', 'Nagad Personal'], true)) {
+            flash('Invalid payment method.', 'error');
+            redirect('?page=deposit');
+        }
+
+        $user = current_user($pdo);
+
+        $stmt = $pdo->prepare("
+            INSERT INTO deposits
+            (user_id, amount, method, sender_number, trx_id, status, created_at)
+            VALUES (?, ?, ?, ?, ?, 'Pending', ?)
+        ");
+
+        $stmt->execute([
+            $user['id'],
+            $amount,
+            $method,
+            $sender,
+            $trx,
+            date('Y-m-d H:i:s')
+        ]);
+
+        flash('Deposit request জমা হয়েছে। Admin approve করার পর balance যোগ হবে।');
+        redirect('?page=deposit');
+    }
+
+    /* ---------------- ORDER ---------------- */
+
+    if ($action === 'order') {
+
+        require_login();
+
+        $productId = (int)($_POST['product_id'] ?? 0);
+        $quantity = (int)($_POST['quantity'] ?? 1);
+        $target = trim($_POST['target_value'] ?? '');
+
+        if ($quantity < 1 || $quantity > 100000) {
+            flash('সঠিক quantity দিন।', 'error');
+            redirect('?page=home');
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT p.*, c.name AS category_name
+            FROM products p
+            JOIN categories c ON c.id = p.category_id
+            WHERE p.id = ? AND p.active = 1 AND c.active = 1
+        ");
+
+        $stmt->execute([$productId]);
+        $product = $stmt->fetch();
+
+        if (!$product) {
+            flash('Product পাওয়া যায়নি।', 'error');
+            redirect('?page=home');
+        }
+
+        if ($target === '') {
+            flash('প্রয়োজনীয় তথ্য/লিংক দিন।', 'error');
+            redirect('?page=product&id=' . $productId);
+        }
+
+        $total = (float)$product['price'] * $quantity;
+
+        $pdo->beginTransaction();
+
+        try {
+
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
+            $stmt->execute([$_SESSION['user_id']]);
+            $user = $stmt->fetch();
+
+            if (!$user || (float)$user['balance'] < $total) {
+                $pdo->rollBack();
+
+                flash('আপনার পর্যাপ্ত balance নেই। আগে Deposit করুন।', 'error');
+                redirect('?page=deposit');
+            }
+
+            $stmt = $pdo->prepare("
+                UPDATE users
+                SET balance = balance - ?,
+                    total_spend = total_spend + ?
+                WHERE id = ?
+            ");
+
+            $stmt->execute([
+                $total,
+                $total,
+                $user['id']
+            ]);
+
+            $stmt = $pdo->prepare("
+                INSERT INTO orders
+                (user_id, product_id, product_name, quantity,
+                 unit_price, total, target_value, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?)
+            ");
+
+            $stmt->execute([
+                $user['id'],
+                $product['id'],
+                $product['name'],
+                $quantity,
+                $product['price'],
+                $total,
+                $target,
+                date('Y-m-d H:i:s')
+            ]);
+
+            $pdo->commit();
+
+            flash('Order সফলভাবে submit হয়েছে।');
+            redirect('?page=orders');
+
+        } catch (Throwable $e) {
+
+            $pdo->rollBack();
+
+            flash('Order submit করতে সমস্যা হয়েছে।', 'error');
+            redirect('?page=product&id=' . $productId);
+        }
+    }
+
+    /* =================================================
+       ADMIN
+    ================================================= */
+
+    if ($action === 'admin_login') {
+
+        $password = $_POST['password'] ?? '';
+
+        /*
+          CHANGE THIS PASSWORD BEFORE DEPLOYMENT.
+          This is only a simple single-file admin login.
+        */
+
+        $adminPassword = '264891';
+
+        if (hash_equals($adminPassword, $password)) {
+            $_SESSION['admin_logged'] = true;
+            redirect('?page=admin');
+        }
+
+        flash('ভুল Admin Password।', 'error');
+        redirect('?page=admin_login');
+    }
+
+    if ($action === 'admin_logout') {
+        unset($_SESSION['admin_logged']);
+        redirect('?page=home');
+    }
+
+    /* ---------------- ADMIN SETTINGS ---------------- */
+
+    if ($action === 'save_settings') {
+
+        require_admin();
+
+        $shopName = trim($_POST['shop_name'] ?? '');
+        $payment = trim($_POST['payment_number'] ?? '');
+        $wa = trim($_POST['whatsapp_number'] ?? '');
+        $tg = trim($_POST['telegram_username'] ?? '');
+        $notice = trim($_POST['notice'] ?? '');
+
+        $stmt = $pdo->prepare("
+            UPDATE settings
+            SET shop_name = ?,
+                payment_number = ?,
+                whatsapp_number = ?,
+                telegram_username = ?,
+                notice = ?
+            WHERE id = 1
+        ");
+
+        $stmt->execute([
+            $shopName,
+            $payment,
+            $wa,
+            $tg,
+            $notice
+        ]);
+
+        flash('Settings আপডেট হয়েছে।');
+        redirect('?page=admin&section=settings');
+    }
+
+    /* ---------------- ADMIN ADD CATEGORY ---------------- */
+
+    if ($action === 'add_category') {
+
+        require_admin();
+
+        $name = trim($_POST['name'] ?? '');
+        $slug = trim($_POST['slug'] ?? '');
+        $icon = trim($_POST['icon'] ?? '📦');
+        $description = trim($_POST['description'] ?? '');
+
+        if ($name === '' || $slug === '') {
+            flash('Category name এবং slug দিন।', 'error');
+            redirect('?page=admin&section=categories');
+        }
+
+        try {
+
+            $stmt = $pdo->prepare("
+                INSERT INTO categories
+                (name, slug, icon, description, active, sort_order)
+                VALUES (?, ?, ?, ?, 1, 99)
+            ");
+
+            $stmt->execute([
+                $name,
+                $slug,
+                $icon,
+                $description
+            ]);
+
+            flash('Category যোগ হয়েছে.');
+
+        } catch (Throwable $e) {
+            flash('এই slug হয়তো আগে থেকেই আছে।', 'error');
+        }
+
+        redirect('?page=admin&section=categories');
+    }
+
+    /* ---------------- ADMIN DELETE CATEGORY ---------------- */
+
+    if ($action === 'delete_category') {
+
+        require_admin();
+
+        $id = (int)($_POST['id'] ?? 0);
+
+        $stmt = $pdo->prepare("DELETE FROM products WHERE category_id = ?");
+        $stmt->execute([$id]);
+
+        $stmt = $pdo->prepare("DELETE FROM categories WHERE id = ?");
+        $stmt->execute([$id]);
+
+        flash('Category delete হয়েছে।');
+        redirect('?page=admin&section=categories');
+    }
+
+    /* ---------------- ADMIN ADD PRODUCT ---------------- */
+
+    if ($action === 'add_product') {
+
+        require_admin();
+
+        $categoryId = (int)($_POST['category_id'] ?? 0);
+        $name = trim($_POST['name'] ?? '');
+        $price = (float)($_POST['price'] ?? 0);
+        $description = trim($_POST['description'] ?? '');
+        $requirements = trim($_POST['requirements'] ?? '');
+        $inputLabel = trim($_POST['input_label'] ?? '');
+
+        if ($categoryId <= 0 || $name === '' || $price <= 0) {
+            flash('Product-এর তথ্য সঠিকভাবে দিন।', 'error');
+            redirect('?page=admin&section=products');
+        }
+
+        $stmt = $pdo->prepare("
+            INSERT INTO products
+            (category_id, name, price, description,
+             requirements, input_label, active, sort_order)
+            VALUES (?, ?, ?, ?, ?, ?, 1, 99)
+        ");
+
+        $stmt->execute([
+            $categoryId,
+            $name,
+            $price,
+            $description,
+            $requirements,
+            $inputLabel
+        ]);
+
+        flash('Product যোগ হয়েছে।');
+        redirect('?page=admin&section=products');
+    }
+
+    /* ---------------- ADMIN UPDATE PRODUCT ---------------- */
+
+    if ($action === 'update_product') {
+
+        require_admin();
+
+        $id = (int)($_POST['id'] ?? 0);
+
+        $name = trim($_POST['name'] ?? '');
+        $price = (float)($_POST['price'] ?? 0);
+        $description = trim($_POST['description'] ?? '');
+        $requirements = trim($_POST['requirements'] ?? '');
+        $inputLabel = trim($_POST['input_label'] ?? '');
+        $active = isset($_POST['active']) ? 1 : 0;
+
+        $stmt = $pdo->prepare("
+            UPDATE products
+            SET name = ?,
+                price = ?,
+                description = ?,
+                requirements = ?,
+                input_label = ?,
+                active = ?
+            WHERE id = ?
+        ");
+
+        $stmt->execute([
+            $name,
+            $price,
+            $description,
+            $requirements,
+            $inputLabel,
+            $active,
+            $id
+        ]);
+
+        flash('Product update হয়েছে।');
+        redirect('?page=admin&section=products');
+    }
+
+    /* ---------------- ADMIN DELETE PRODUCT ---------------- */
+
+    if ($action === 'delete_product') {
+
+        require_admin();
+
+        $id = (int)($_POST['id'] ?? 0);
+
+        $stmt = $pdo->prepare("DELETE FROM products WHERE id = ?");
+        $stmt->execute([$id]);
+
+        flash('Product delete হয়েছে।');
+        redirect('?page=admin&section=products');
+    }
+
+    /* ---------------- ADMIN DEPOSIT APPROVE ---------------- */
+
+    if ($action === 'approve_deposit') {
+
+        require_admin();
+
+        $id = (int)($_POST['id'] ?? 0);
+
+        $pdo->beginTransaction();
+
+        try {
+
+            $stmt = $pdo->prepare("
+                SELECT * FROM deposits
+                WHERE id = ?
+            ");
+
+            $stmt->execute([$id]);
+            $deposit = $stmt->fetch();
+
+            if (!$deposit || $deposit['status'] !== 'Pending') {
+                throw new Exception('Invalid deposit.');
+            }
+
+            $stmt = $pdo->prepare("
+                UPDATE deposits
+                SET status = 'Approved'
+                WHERE id = ?
+            ");
+
+            $stmt->execute([$id]);
+
+            $stmt = $pdo->prepare("
+                UPDATE users
+                SET balance = balance + ?
+                WHERE id = ?
+            ");
+
+            $stmt->execute([
+                $deposit['amount'],
+                $deposit['user_id']
+            ]);
+
+            $pdo->commit();
+
+            flash('Deposit approve হয়েছে।');
+
+        } catch (Throwable $e) {
+
+            $pdo->rollBack();
+
+            flash('Deposit approve করা যায়নি।', 'error');
+        }
+
+        redirect('?page=admin&section=deposits');
+    }
+
+    /* ---------------- ADMIN CANCEL DEPOSIT ---------------- */
+
+    if ($action === 'cancel_deposit') {
+
+        require_admin();
+
+        $id = (int)($_POST['id'] ?? 0);
+
+        $stmt = $pdo->prepare("
+            UPDATE deposits
+            SET status = 'Cancelled'
+            WHERE id = ? AND status = 'Pending'
+        ");
+
+        $stmt->execute([$id]);
+
+        flash('Deposit cancel হয়েছে।');
+        redirect('?page=admin&section=deposits');
+    }
+
+    /* ---------------- ADMIN ORDER STATUS ---------------- */
+
+    if ($action === 'order_status') {
+
+        require_admin();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $status = $_POST['status'] ?? '';
+
+        $allowed = [
+            'Pending',
+            'Processing',
+            'Complete',
+            'Cancelled'
+        ];
+
+        if (!in_array($status, $allowed, true)) {
+            flash('Invalid status.', 'error');
+            redirect('?page=admin&section=orders');
+        }
+
+        $stmt = $pdo->prepare("
+            UPDATE orders
+            SET status = ?
+            WHERE id = ?
+        ");
+
+        $stmt->execute([
+            $status,
+            $id
+        ]);
+
+        flash('Order status update হয়েছে।');
+        redirect('?page=admin&section=orders');
+    }
+
+    /* ---------------- ADMIN ADD BALANCE ---------------- */
+
+    if ($action === 'admin_add_balance') {
+
+        require_admin();
+
+        $userId = (int)($_POST['user_id'] ?? 0);
+        $amount = (float)($_POST['amount'] ?? 0);
+
+        if ($amount <= 0) {
+            flash('সঠিক amount দিন।', 'error');
+            redirect('?page=admin&section=customers');
+        }
+
+        $stmt = $pdo->prepare("
+            UPDATE users
+            SET balance = balance + ?
+            WHERE id = ?
+        ");
+
+        $stmt->execute([
+            $amount,
+            $userId
+        ]);
+
+        flash('Balance যোগ হয়েছে।');
+        redirect('?page=admin&section=customers');
+    }
+}
+
+/* =====================================================
+   PAGE / DATA
+===================================================== */
+
+$page = $_GET['page'] ?? 'home';
+
+$flash = get_flash();
+
+$user = current_user($pdo);
+
+$categories = $pdo->query("
+    SELECT *
+    FROM categories
+    WHERE active = 1
+    ORDER BY sort_order ASC, id ASC
+")->fetchAll();
+
+/* =====================================================
+   CSS
+===================================================== */
+
+?>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TOPUP BUZZ</title>
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title><?= e($settings['shop_name']) ?></title>
+
 <script src="https://cdn.tailwindcss.com"></script>
+
 <style>
-  body { background: #f3f4f6; font-family: Arial, sans-serif; margin: 0; }
-  .hide { display: none !important; }
+
+body {
+    background:#f3f4f6;
+    font-family:Arial,sans-serif;
+    margin:0;
+}
+
+.hide {
+    display:none!important;
+}
+
+.card {
+    transition:.15s;
+}
+
+.card:hover {
+    transform:translateY(-2px);
+}
+
+textarea {
+    min-height:90px;
+}
+
 </style>
+
 </head>
-<body class="bg-gray-100 flex justify-center">
 
-<div class="w-full max-w-md bg-white min-h-screen shadow-xl relative pb-24 flex flex-col justify-between" id="app-container">
-    
-    <!-- HEADER -->
-    <header class="bg-white border-b px-4 py-3 flex justify-between items-center sticky top-0 z-30">
-        <div>
-            <h1 id="shop-title" class="text-lg font-bold text-indigo-700">TOPUP BUZZ</h1>
-            <p class="text-[10px] text-gray-500">Fast & Secure TopUp</p>
-        </div>
-        <div class="flex items-center gap-2">
-            <div id="user-balance-badge" class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-bold hide">
-                ৳ <span id="header-balance">0</span>
+<body class="bg-gray-100">
+
+<div class="w-full max-w-md mx-auto bg-white min-h-screen shadow-xl relative pb-20">
+
+<!-- HEADER -->
+
+<header class="bg-white border-b px-4 py-3 flex justify-between items-center sticky top-0 z-30">
+
+    <a href="?page=home">
+
+        <h1 class="text-lg font-bold text-indigo-700">
+            <?= e($settings['shop_name']) ?>
+        </h1>
+
+        <p class="text-[10px] text-gray-500">
+            Fast & Secure Service
+        </p>
+
+    </a>
+
+    <div class="flex items-center gap-2">
+
+        <?php if ($user): ?>
+
+            <div class="bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-full text-xs font-bold">
+                ৳ <?= number_format((float)$user['balance'], 2) ?>
             </div>
-            <button onclick="switchTab('admin')" class="bg-gray-900 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold">Admin</button>
-        </div>
-    </header>
 
-    <!-- MAIN CONTENT AREA -->
-    <main class="p-4 flex-1 overflow-y-auto" id="main-content">
-        <!-- Dynamic content -->
-    </main>
+        <?php endif; ?>
 
-    <!-- FLOATING SUPPORT BUTTONS -->
-    <div id="floating-support" class="fixed bottom-16 right-4 z-40 flex flex-col gap-2 hide">
-        <a id="support-wa-btn" href="#" target="_blank" class="bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-lg transition-transform transform hover:scale-105" title="WhatsApp Support">
-            💬
+        <a href="?page=admin"
+           class="bg-gray-900 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold">
+
+            Admin
+
         </a>
-        <a id="support-tg-btn" href="#" target="_blank" class="bg-sky-500 hover:bg-sky-600 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-lg transition-transform transform hover:scale-105" title="Telegram Support">
-            ✈️
-        </a>
+
     </div>
 
-    <!-- BOTTOM NAVIGATION -->
-    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t flex justify-around py-2.5 z-30 hide">
-        <button onclick="switchTab('home')" id="nav-home" class="text-xs text-center text-indigo-600 font-bold">🏠<br>Home</button>
-        <button onclick="switchTab('deposit')" id="nav-deposit" class="text-xs text-center text-gray-500">💰<br>Deposit</button>
-        <button onclick="switchTab('rewards')" id="nav-rewards" class="text-xs text-center text-gray-500">🏆<br>Rewards</button>
-        <button onclick="switchTab('orders')" id="nav-orders" class="text-xs text-center text-gray-500">📦<br>Orders</button>
-        <button onclick="logout()" class="text-xs text-center text-red-500">🚪<br>Logout</button>
-    </nav>
+</header>
+
+
+<!-- FLASH -->
+
+<?php if ($flash): ?>
+
+<div class="mx-4 mt-3">
+
+    <div class="
+        rounded-xl p-3 text-xs font-bold
+        <?= $flash['type'] === 'error'
+            ? 'bg-red-100 text-red-700'
+            : 'bg-green-100 text-green-700'
+        ?>
+    ">
+
+        <?= e($flash['message']) ?>
+
+    </div>
+
 </div>
 
-<script>
-const ADMIN_PASSWORD = "264891";
+<?php endif; ?>
 
-let db = {
-    settings: JSON.parse(localStorage.getItem("tb_settings")) || {
-        shopName: "TOPUP BUZZ",
-        paymentNumber: "01994835545",
-        whatsappNumber: "8801994835545",
-        telegramUsername: "frouptopup",
-        notice: "কম মূল্যে দ্রুত ও সহজে TopUp করুন।"
-    },
-    packages: JSON.parse(localStorage.getItem("tb_packages")) || [
-        {id:1, name:"25 Diamonds", price:26, category:"diamond", active:true},
-        {id:2, name:"50 Diamonds", price:39, category:"diamond", active:true},
-        {id:3, name:"115 Diamonds", price:95, category:"diamond", active:true},
-        {id:4, name:"240 Diamonds", price:169, category:"diamond", active:true},
-        {id:5, name:"Weekly Membership", price:165, category:"weekly", active:true},
-        {id:6, name:"Weekly Lite", price:48, category:"weekly_lite", active:true},
-        {id:7, name:"Monthly Membership", price:810, category:"monthly", active:true}
-    ],
-    users: JSON.parse(localStorage.getItem("tb_users")) || [],
-    orders: JSON.parse(localStorage.getItem("tb_orders")) || [],
-    deposits: JSON.parse(localStorage.getItem("tb_deposits")) || [],
-    currentUserId: localStorage.getItem("tb_current_user") ? JSON.parse(localStorage.getItem("tb_current_user")).id : null,
-    currentTab: "home",
-    authMode: "login",
-    selectedCategory: "diamond",
-    selectedPkgId: null,
-    orderQty: 1,
-    adminLogged: false,
-    adminSection: "dashboard"
-};
 
-function saveData() {
-    localStorage.setItem("tb_settings", JSON.stringify(db.settings));
-    localStorage.setItem("tb_packages", JSON.stringify(db.packages));
-    localStorage.setItem("tb_users", JSON.stringify(db.users));
-    localStorage.setItem("tb_orders", JSON.stringify(db.orders));
-    localStorage.setItem("tb_deposits", JSON.stringify(db.deposits));
-    if(db.currentUserId) {
-        const user = db.users.find(u => u.id === db.currentUserId);
-        localStorage.setItem("tb_current_user", JSON.stringify(user));
-    } else {
-        localStorage.removeItem("tb_current_user");
-    }
-}
+<!-- MAIN -->
 
-function getCurrentUser() {
-    return db.users.find(u => u.id === db.currentUserId) || null;
-}
+<main class="p-4">
 
-function switchTab(tab) {
-    db.currentTab = tab;
-    render();
-}
+<?php
 
-function render() {
-    const user = getCurrentUser();
-    const main = document.getElementById("main-content");
-    const nav = document.getElementById("bottom-nav");
-    const balanceBadge = document.getElementById("user-balance-badge");
-    const shopTitle = document.getElementById("shop-title");
-    const supportButtons = document.getElementById("floating-support");
-    
-    shopTitle.innerText = db.settings.shopName;
-    
-    // Update Support Links
-    document.getElementById("support-wa-btn").href = `https://wa.me/${db.settings.whatsappNumber}`;
-    document.getElementById("support-tg-btn").href = `https://t.me/${db.settings.telegramUsername}`;
+/* =====================================================
+   HOME
+===================================================== */
 
-    if (!user && db.currentTab !== "admin") {
-        nav.classList.add("hide");
-        balanceBadge.classList.add("hide");
-        supportButtons.classList.add("hide");
-        main.innerHTML = renderAuth();
-        return;
-    }
+if ($page === 'home'):
 
-    if (user && db.currentTab !== "admin") {
-        nav.classList.remove("hide");
-        balanceBadge.classList.remove("hide");
-        supportButtons.classList.remove("hide");
-        document.getElementById("header-balance").innerText = user.balance || 0;
-        
-        ["home", "deposit", "rewards", "orders"].forEach(t => {
-            const el = document.getElementById(`nav-${t}`);
-            if(el) {
-                el.className = `text-xs text-center ${db.currentTab === t ? 'text-indigo-600 font-bold' : 'text-gray-500'}`;
-            }
-        });
-    }
+?>
 
-    if (db.currentTab === "home") main.innerHTML = renderHome();
-    else if (db.currentTab === "deposit") main.innerHTML = renderDeposit();
-    else if (db.currentTab === "rewards") main.innerHTML = renderRewards();
-    else if (db.currentTab === "orders") main.innerHTML = renderOrders();
-    else if (db.currentTab === "admin") {
-        nav.classList.add("hide");
-        balanceBadge.classList.add("hide");
-        supportButtons.classList.add("hide");
-        main.innerHTML = renderAdmin();
-    }
-}
+<div>
 
-function renderAuth() {
-    return `
-        <div class="flex flex-col justify-center items-center py-10">
-            <div class="bg-white w-full rounded-2xl p-6">
-                <h2 class="text-2xl font-bold text-indigo-700 text-center">${db.settings.shopName}</h2>
-                <p class="text-center text-gray-500 text-sm mt-1">${db.authMode === 'login' ? 'Customer Login' : 'Create Account'}</p>
-                
-                <div class="mt-6 space-y-3">
-                    <input type="text" id="auth-phone" placeholder="01XXXXXXXXX" class="w-full border rounded-xl p-3 text-sm focus:outline-indigo-600">
-                    <input type="password" id="auth-pass" placeholder="Password" class="w-full border rounded-xl p-3 text-sm focus:outline-indigo-600">
-                    ${db.authMode === 'register' ? `<input type="password" id="auth-conf-pass" placeholder="Confirm Password" class="w-full border rounded-xl p-3 text-sm focus:outline-indigo-600">` : ''}
-                    
-                    <button onclick="handleAuth()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm">
-                        ${db.authMode === 'login' ? 'Login' : 'Register'}
-                    </button>
-                    
-                    <button onclick="toggleAuthMode()" class="w-full text-indigo-600 text-xs text-center mt-2">
-                        ${db.authMode === 'login' ? 'Create New Account' : 'Already have account? Login'}
-                    </button>
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-4 mb-4 shadow">
+
+        <h2 class="text-lg font-bold">
+            সেরা Online Service 🔥
+        </h2>
+
+        <p class="text-xs mt-1 opacity-90">
+            <?= e($settings['notice']) ?>
+        </p>
+
+    </div>
+
+
+    <!-- CATEGORY -->
+
+    <h2 class="text-sm font-bold mb-2">
+        Service Categories
+    </h2>
+
+    <div class="grid grid-cols-2 gap-2 mb-5">
+
+        <?php foreach ($categories as $cat): ?>
+
+            <a href="?page=category&id=<?= (int)$cat['id'] ?>"
+               class="card bg-white border rounded-2xl p-4 shadow-sm">
+
+                <div class="text-3xl mb-2">
+                    <?= e($cat['icon']) ?>
                 </div>
-            </div>
+
+                <div class="font-bold text-sm">
+                    <?= e($cat['name']) ?>
+                </div>
+
+                <div class="text-[10px] text-gray-500 mt-1">
+                    <?= e($cat['description']) ?>
+                </div>
+
+            </a>
+
+        <?php endforeach; ?>
+
+    </div>
+
+
+    <?php if (!$user): ?>
+
+    <div class="bg-indigo-50 rounded-xl p-3 text-xs text-indigo-800">
+
+        <b>অর্ডার করতে Login প্রয়োজন।</b>
+
+        <div class="mt-2 flex gap-2">
+
+            <a href="?page=login"
+               class="bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold">
+
+                Login
+
+            </a>
+
+            <a href="?page=register"
+               class="bg-white border border-indigo-300 text-indigo-700 px-3 py-2 rounded-lg font-bold">
+
+                Register
+
+            </a>
+
         </div>
-    `;
-}
 
-function toggleAuthMode() {
-    db.authMode = db.authMode === 'login' ? 'register' : 'login';
-    render();
-}
+    </div>
 
-function handleAuth() {
-    const phone = document.getElementById("auth-phone").value.trim();
-    const pass = document.getElementById("auth-pass").value.trim();
+    <?php endif; ?>
 
-    if (!/^01[0-9]{9}$/.test(phone)) {
-        alert("সঠিক ১১ সংখ্যার ফোন নম্বর দিন");
-        return;
-    }
-    if (pass.length < 6) {
-        alert("Password কমপক্ষে ৬ অক্ষরের হতে হবে");
-        return;
-    }
+</div>
 
-    if (db.authMode === 'register') {
-        const confPass = document.getElementById("auth-conf-pass").value.trim();
-        if (pass !== confPass) {
-            alert("Password মিলছে না");
-            return;
-        }
-        if (db.users.some(u => u.phone === phone)) {
-            alert("এই নম্বর দিয়ে ইতিমধ্যে অ্যাকাউন্ট রয়েছে");
-            return;
-        }
-        const newUser = {
-            id: Date.now(),
-            phone,
-            password: pass,
-            balance: 0,
-            totalSpend: 0,
-            createdAt: new Date().toLocaleDateString()
-        };
-        db.users.push(newUser);
-        db.currentUserId = newUser.id;
-        saveData();
-        render();
-    } else {
-        const user = db.users.find(u => u.phone === phone && u.password === pass);
-        if (!user) {
-            alert("নম্বর অথবা পাসওয়ার্ড ভুল হয়েছে");
-            return;
-        }
-        db.currentUserId = user.id;
-        saveData();
-        render();
-    }
-}
 
-function logout() {
-    db.currentUserId = null;
-    db.currentTab = "home";
-    saveData();
-    render();
-}
+<?php
 
-function renderHome() {
-    const categories = [
-        ["diamond", "💎 Diamond"],
-        ["weekly", "👑 Weekly"],
-        ["weekly_lite", "⚡ Weekly Lite"],
-        ["monthly", "📅 Monthly"]
-    ];
+/* =====================================================
+   CATEGORY
+===================================================== */
 
-    const pkgs = db.packages.filter(p => p.category === db.selectedCategory && p.active !== false);
-    const selectedPkg = db.packages.find(p => p.id === db.selectedPkgId);
-    const totalPrice = selectedPkg ? selectedPkg.price * db.orderQty : 0;
+elseif ($page === 'category'):
 
-    return `
+$id = (int)($_GET['id'] ?? 0);
+
+$stmt = $pdo->prepare("
+    SELECT *
+    FROM categories
+    WHERE id = ? AND active = 1
+");
+
+$stmt->execute([$id]);
+
+$category = $stmt->fetch();
+
+if (!$category):
+
+?>
+
+<div class="text-center py-10 text-gray-500">
+    Category পাওয়া যায়নি।
+</div>
+
+<?php else:
+
+$stmt = $pdo->prepare("
+    SELECT *
+    FROM products
+    WHERE category_id = ?
+    AND active = 1
+    ORDER BY sort_order ASC, id ASC
+");
+
+$stmt->execute([$category['id']]);
+
+$products = $stmt->fetchAll();
+
+?>
+
+<div>
+
+    <a href="?page=home"
+       class="text-xs text-indigo-600 font-bold">
+
+        ← Back
+
+    </a>
+
+    <div class="mt-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-4">
+
+        <div class="text-3xl">
+            <?= e($category['icon']) ?>
+        </div>
+
+        <h2 class="text-xl font-bold mt-1">
+            <?= e($category['name']) ?>
+        </h2>
+
+        <p class="text-xs opacity-90">
+            <?= e($category['description']) ?>
+        </p>
+
+    </div>
+
+
+    <div class="grid grid-cols-2 gap-2.5 mt-4">
+
+        <?php foreach ($products as $product): ?>
+
+        <a href="?page=product&id=<?= (int)$product['id'] ?>"
+           class="card bg-white border rounded-xl p-3 shadow-sm">
+
+            <div class="font-bold text-xs">
+                <?= e($product['name']) ?>
+            </div>
+
+            <div class="text-indigo-600 font-bold text-sm mt-2">
+
+                ৳ <?= number_format((float)$product['price'], 2) ?>
+
+            </div>
+
+            <div class="text-[10px] text-gray-400 mt-1">
+                বিস্তারিত দেখতে →
+            </div>
+
+        </a>
+
+        <?php endforeach; ?>
+
+    </div>
+
+</div>
+
+<?php endif; ?>
+
+
+<?php
+
+/* =====================================================
+   PRODUCT
+===================================================== */
+
+elseif ($page === 'product'):
+
+$id = (int)($_GET['id'] ?? 0);
+
+$stmt = $pdo->prepare("
+    SELECT p.*, c.name AS category_name, c.icon
+    FROM products p
+    JOIN categories c ON c.id = p.category_id
+    WHERE p.id = ? AND p.active = 1
+");
+
+$stmt->execute([$id]);
+
+$product = $stmt->fetch();
+
+if (!$product):
+
+?>
+
+<div class="text-center py-10 text-gray-500">
+    Product পাওয়া যায়নি।
+</div>
+
+<?php else: ?>
+
+<div>
+
+    <a href="?page=category&id=<?= (int)$product['category_id'] ?>"
+       class="text-xs text-indigo-600 font-bold">
+
+        ← <?= e($product['category_name']) ?>
+
+    </a>
+
+
+    <div class="bg-white border rounded-2xl p-4 shadow-sm mt-3">
+
+        <div class="text-4xl">
+            <?= e($product['icon']) ?>
+        </div>
+
+        <h2 class="text-lg font-bold mt-2">
+            <?= e($product['name']) ?>
+        </h2>
+
+        <div class="text-indigo-600 text-lg font-bold mt-1">
+            ৳ <?= number_format((float)$product['price'], 2) ?>
+        </div>
+
+        <div class="border-t my-4"></div>
+
+
+        <!-- DESCRIPTION -->
+
+        <h3 class="font-bold text-xs">
+            📋 Product Description
+        </h3>
+
+        <p class="text-xs text-gray-600 mt-1 whitespace-pre-line">
+            <?= e($product['description']) ?>
+        </p>
+
+
+        <!-- REQUIREMENTS -->
+
+        <div class="bg-indigo-50 rounded-xl p-3 mt-4">
+
+            <h3 class="font-bold text-xs text-indigo-800">
+                📌 নিয়ম / Requirements
+            </h3>
+
+            <p class="text-xs text-indigo-700 mt-1 whitespace-pre-line">
+                <?= e($product['requirements']) ?>
+            </p>
+
+        </div>
+
+
+        <?php if (!$user): ?>
+
+        <div class="mt-5">
+
+            <div class="bg-yellow-50 text-yellow-800 rounded-xl p-3 text-xs">
+
+                এই Product কিনতে আপনার account-এ Login করতে হবে।
+
+            </div>
+
+            <a href="?page=login"
+               class="block text-center bg-indigo-600 text-white rounded-xl py-3 mt-3 text-xs font-bold">
+
+                Login করে Order করুন
+
+            </a>
+
+            <a href="?page=register"
+               class="block text-center text-indigo-600 py-2 text-xs font-bold">
+
+                নতুন Account তৈরি করুন
+
+            </a>
+
+        </div>
+
+        <?php else: ?>
+
+
+        <!-- ORDER FORM -->
+
+        <form method="post" class="mt-5">
+
+            <input type="hidden"
+                   name="csrf"
+                   value="<?= e(csrf_token()) ?>">
+
+            <input type="hidden"
+                   name="action"
+                   value="order">
+
+            <input type="hidden"
+                   name="product_id"
+                   value="<?= (int)$product['id'] ?>">
+
+
+            <label class="text-[11px] font-bold text-gray-600">
+                Quantity
+            </label>
+
+            <input
+                type="number"
+                name="quantity"
+                value="1"
+                min="1"
+                max="100000"
+                class="w-full border rounded-xl p-3 text-sm mt-1 mb-3"
+                required
+            >
+
+
+            <label class="text-[11px] font-bold text-gray-600">
+
+                <?= e(
+                    $product['input_label'] ?: 'Required Information'
+                ) ?>
+
+            </label>
+
+            <textarea
+                name="target_value"
+                placeholder="<?= e($product['input_label']) ?>"
+                class="w-full border rounded-xl p-3 text-xs mt-1"
+                required
+            ></textarea>
+
+
+            <div class="bg-gray-100 p-3 rounded-xl mt-3 text-xs">
+
+                <div class="flex justify-between">
+
+                    <span>
+                        আপনার Balance
+                    </span>
+
+                    <b>
+                        ৳ <?= number_format((float)$user['balance'], 2) ?>
+                    </b>
+
+                </div>
+
+                <div class="text-[10px] text-gray-500 mt-1">
+                    Quantity পরিবর্তন করলে মোট মূল্য হিসাব হবে:
+                    ৳<?= number_format((float)$product['price'], 2) ?> × Quantity
+                </div>
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs mt-3">
+
+                Confirm Order 🚀
+
+            </button>
+
+        </form>
+
+
+        <a href="?page=deposit"
+           class="block text-center text-indigo-600 font-bold text-xs mt-3">
+
+            💰 Balance কম? Deposit করুন
+
+        </a>
+
+        <?php endif; ?>
+
+    </div>
+
+</div>
+
+<?php endif; ?>
+
+
+<?php
+
+/* =====================================================
+   LOGIN
+===================================================== */
+
+elseif ($page === 'login'):
+
+?>
+
+<div class="py-8">
+
+    <div class="bg-white border rounded-2xl p-5 shadow-sm">
+
+        <h2 class="text-xl font-bold text-indigo-700 text-center">
+            Customer Login
+        </h2>
+
+        <p class="text-center text-gray-500 text-xs mt-1">
+            যেকোনো ফোন থেকে Login করতে পারবেন
+        </p>
+
+
+        <form method="post" class="mt-6 space-y-3">
+
+            <input type="hidden"
+                   name="csrf"
+                   value="<?= e(csrf_token()) ?>">
+
+            <input type="hidden"
+                   name="action"
+                   value="login">
+
+            <input
+                type="text"
+                name="phone"
+                placeholder="01XXXXXXXXX"
+                class="w-full border rounded-xl p-3 text-sm"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                class="w-full border rounded-xl p-3 text-sm"
+                required
+            >
+
+            <button
+                class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm">
+
+                Login
+
+            </button>
+
+        </form>
+
+
+        <a href="?page=register"
+           class="block text-center text-indigo-600 text-xs font-bold mt-4">
+
+            Create New Account
+
+        </a>
+
+    </div>
+
+</div>
+
+
+<?php
+
+/* =====================================================
+   REGISTER
+===================================================== */
+
+elseif ($page === 'register'):
+
+?>
+
+<div class="py-8">
+
+    <div class="bg-white border rounded-2xl p-5 shadow-sm">
+
+        <h2 class="text-xl font-bold text-indigo-700 text-center">
+            Create Account
+        </h2>
+
+        <form method="post" class="mt-6 space-y-3">
+
+            <input type="hidden"
+                   name="csrf"
+                   value="<?= e(csrf_token()) ?>">
+
+            <input type="hidden"
+                   name="action"
+                   value="register">
+
+            <input
+                type="text"
+                name="phone"
+                placeholder="01XXXXXXXXX"
+                class="w-full border rounded-xl p-3 text-sm"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Password (minimum 6 characters)"
+                class="w-full border rounded-xl p-3 text-sm"
+                required
+            >
+
+            <input
+                type="password"
+                name="confirm"
+                placeholder="Confirm Password"
+                class="w-full border rounded-xl p-3 text-sm"
+                required
+            >
+
+            <button
+                class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm">
+
+                Register
+
+            </button>
+
+        </form>
+
+
+        <a href="?page=login"
+           class="block text-center text-indigo-600 text-xs font-bold mt-4">
+
+            Already have account? Login
+
+        </a>
+
+    </div>
+
+</div>
+
+
+<?php
+
+/* =====================================================
+   DEPOSIT
+===================================================== */
+
+elseif ($page === 'deposit'):
+
+require_login();
+
+?>
+
+<div>
+
+    <h2 class="text-base font-bold mb-3">
+        💰 Balance Deposit
+    </h2>
+
+    <div class="bg-indigo-50 rounded-2xl p-4 mb-3">
+
+        <p class="text-[10px] text-gray-500">
+            টাকা পাঠানোর নম্বর
+        </p>
+
+        <p class="text-lg font-bold text-indigo-700">
+            <?= e($settings['payment_number']) ?>
+        </p>
+
+        <p class="text-[10px] text-gray-500 mt-1">
+            bKash অথবা Nagad-এ টাকা পাঠিয়ে নিচের form পূরণ করুন।
+        </p>
+
+    </div>
+
+
+    <form method="post"
+          class="bg-white border rounded-2xl p-4 shadow-sm space-y-3">
+
+        <input type="hidden"
+               name="csrf"
+               value="<?= e(csrf_token()) ?>">
+
+        <input type="hidden"
+               name="action"
+               value="deposit">
+
+
         <div>
-            <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-4 mb-4 shadow">
-                <h2 class="text-lg font-bold">সেরা TopUp সেবা 🔥</h2>
-                <p class="text-xs mt-1 opacity-90">${db.settings.notice}</p>
-            </div>
 
-            <div class="flex gap-2 overflow-x-auto pb-2 mb-3">
-                ${categories.map(c => `
-                    <button onclick="setCategory('${c[0]}')" class="whitespace-nowrap px-3 py-2 rounded-xl text-xs font-bold ${db.selectedCategory === c[0] ? 'bg-indigo-600 text-white' : 'bg-white border text-gray-700'}">
-                        ${c[1]}
-                    </button>
-                `).join('')}
-            </div>
+            <label class="text-[11px] font-bold">
+                Amount
+            </label>
 
-            <div class="grid grid-cols-2 gap-2.5">
-                ${pkgs.map(pkg => `
-                    <div onclick="selectPackage(${pkg.id})" class="bg-white border rounded-xl p-3 cursor-pointer shadow-sm ${db.selectedPkgId === pkg.id ? 'border-indigo-600 ring-2 ring-indigo-100 bg-indigo-50/20' : ''}">
-                        <div class="font-bold text-xs text-gray-800">${pkg.name}</div>
-                        <div class="text-indigo-600 font-bold text-sm mt-2">৳ ${pkg.price}</div>
-                    </div>
-                `).join('')}
-            </div>
+            <input
+                type="number"
+                name="amount"
+                min="1"
+                step="1"
+                placeholder="যেমন 500"
+                class="w-full border rounded-xl p-3 text-xs mt-1"
+                required
+            >
 
-            ${selectedPkg ? `
-                <div class="bg-white border rounded-2xl p-4 mt-5 shadow-sm">
-                    <h3 class="font-bold text-sm mb-3">📦 Order Confirmation</h3>
-                    <div class="bg-indigo-50 p-2.5 rounded-xl mb-3 flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-xs text-indigo-900">${selectedPkg.name}</div>
-                            <div class="text-[10px] text-gray-500">মূল্য: ৳${selectedPkg.price} প্রতি প্যাক</div>
-                        </div>
-                    </div>
-
-                    <label class="text-[11px] font-bold text-gray-600">পরিমাণ (Quantity)</label>
-                    <select onchange="changeQty(this.value)" class="w-full border rounded-xl p-2.5 text-xs mt-1 mb-3 bg-white">
-                        ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}" ${db.orderQty === n ? 'selected' : ''}>${n} টি</option>`).join('')}
-                    </select>
-
-                    <label class="text-[11px] font-bold text-gray-600">Free Fire UID</label>
-                    <input type="text" id="order-uid" placeholder="আপনার UID লিখুন" class="w-full border rounded-xl p-2.5 text-xs mt-1 mb-3">
-
-                    <div class="bg-gray-100 p-3 rounded-xl flex justify-between items-center text-xs mb-3">
-                        <span class="font-bold">মোট খরচ:</span>
-                        <span class="font-bold text-indigo-700 text-sm">৳ ${totalPrice}</span>
-                    </div>
-
-                    <button onclick="submitOrder()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs">
-                        Confirm Order 🚀
-                    </button>
-                </div>
-            ` : ''}
         </div>
-    `;
-}
 
-function setCategory(cat) {
-    db.selectedCategory = cat;
-    db.selectedPkgId = null;
-    render();
-}
 
-function selectPackage(id) {
-    db.selectedPkgId = id;
-    db.orderQty = 1;
-    render();
-}
-
-function changeQty(val) {
-    db.orderQty = Number(val);
-}
-
-function submitOrder() {
-    const uid = document.getElementById("order-uid").value.trim();
-    if (!uid) {
-        alert("দয়া করে Free Fire UID দিন");
-        return;
-    }
-    const pkg = db.packages.find(p => p.id === db.selectedPkgId);
-    const user = getCurrentUser();
-    const total = pkg.price * db.orderQty;
-
-    if (user.balance < total) {
-        alert("পর্যাপ্ত ব্যালেন্স নেই। দয়া করে আগে ডিপোজিট করুন।");
-        switchTab('deposit');
-        return;
-    }
-
-    user.balance -= total;
-    user.totalSpend = (user.totalSpend || 0) + total;
-
-    const newOrder = {
-        id: Date.now(),
-        userId: user.id,
-        userPhone: user.phone,
-        packageName: pkg.name,
-        quantity: db.orderQty,
-        total: total,
-        uid: uid,
-        status: "Pending",
-        date: new Date().toLocaleString()
-    };
-
-    db.orders.unshift(newOrder);
-    db.selectedPkgId = null;
-    db.orderQty = 1;
-    saveData();
-    alert("অর্ডার সফলভাবে সাবমিট হয়েছে!");
-    render();
-}
-
-function renderDeposit() {
-    return `
         <div>
-            <h2 class="text-base font-bold mb-3">💰 Balance Deposit</h2>
-            <div class="bg-white border rounded-2xl p-4 shadow-sm space-y-3">
-                <div>
-                    <label class="text-[11px] font-bold text-gray-600">টাকার পরিমাণ</label>
-                    <input type="number" id="dep-amount" placeholder="যেমন: 500" class="w-full border rounded-xl p-2.5 text-xs mt-1">
-                </div>
 
-                <div>
-                    <label class="text-[11px] font-bold text-gray-600">পেমেন্ট মাধ্যম</label>
-                    <select id="dep-method" class="w-full border rounded-xl p-2.5 text-xs mt-1 bg-white">
-                        <option value="bKash Personal">bKash Personal</option>
-                        <option value="Nagad Personal">Nagad Personal</option>
-                    </select>
-                </div>
+            <label class="text-[11px] font-bold">
+                Payment Method
+            </label>
 
-                <div class="bg-indigo-50 p-3 rounded-xl">
-                    <p class="text-[10px] text-gray-500">টাকা পাঠানোর নম্বর:</p>
-                    <p class="text-sm font-bold text-indigo-700">${db.settings.paymentNumber}</p>
-                </div>
+            <select
+                name="method"
+                class="w-full border rounded-xl p-3 text-xs mt-1">
 
-                <div>
-                    <label class="text-[11px] font-bold text-gray-600">প্রেরক নম্বর (যে নম্বর থেকে টাকা পাঠিয়েছেন)</label>
-                    <input type="text" id="dep-sender" placeholder="01XXXXXXXXX" class="w-full border rounded-xl p-2.5 text-xs mt-1">
-                </div>
+                <option value="bKash Personal">
+                    bKash Personal
+                </option>
 
-                <div>
-                    <label class="text-[11px] font-bold text-gray-600">Transaction ID (TrxID)</label>
-                    <input type="text" id="dep-trx" placeholder="TrxID দিন" class="w-full border rounded-xl p-2.5 text-xs mt-1">
-                </div>
+                <option value="Nagad Personal">
+                    Nagad Personal
+                </option>
 
-                <button onclick="submitDeposit()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs">
-                    Deposit Submit
-                </button>
-            </div>
+            </select>
+
         </div>
-    `;
-}
 
-function submitDeposit() {
-    const amount = Number(document.getElementById("dep-amount").value);
-    const method = document.getElementById("dep-method").value;
-    const sender = document.getElementById("dep-sender").value.trim();
-    const trx = document.getElementById("dep-trx").value.trim();
 
-    if (!amount || amount <= 0 || !sender || !trx) {
-        alert("সব তথ্য সঠিকভাবে পূরণ করুন");
-        return;
-    }
-
-    const user = getCurrentUser();
-    const deposit = {
-        id: Date.now(),
-        userId: user.id,
-        userPhone: user.phone,
-        amount,
-        method,
-        senderNumber: sender,
-        trxId: trx,
-        status: "Pending",
-        date: new Date().toLocaleString()
-    };
-
-    db.deposits.unshift(deposit);
-    saveData();
-
-    const msg = `NEW DEPOSIT\nUser: ${user.phone}\nAmount: ৳${amount}\nMethod: ${method}\nSender: ${sender}\nTrxID: ${trx}`;
-    window.open(`https://wa.me/${db.settings.whatsappNumber}?text=${encodeURIComponent(msg)}`, '_blank');
-
-    alert("ডিপোজিট রিকোয়েস্ট সফলভাবে জমা হয়েছে।");
-    switchTab('home');
-}
-
-function renderRewards() {
-    const user = getCurrentUser();
-    const spend = user.totalSpend || 0;
-    const ranks = [
-        {name: "Heroic", req: 1000, gift: "50 Diamonds"},
-        {name: "Platinum", req: 5000, gift: "100 Diamonds"},
-        {name: "Master", req: 10000, gift: "Weekly Lite"}
-    ];
-
-    return `
         <div>
-            <h2 class="text-base font-bold mb-3">🏆 Rewards & Ranks</h2>
-            <div class="space-y-3">
-                ${ranks.map(r => {
-                    const unlocked = spend >= r.req;
-                    return `
-                        <div class="bg-white border rounded-2xl p-4 shadow-sm flex justify-between items-center">
-                            <div>
-                                <h3 class="font-bold text-xs">${r.name}</h3>
-                                <p class="text-[10px] text-gray-500">Requirement: ৳${r.req}</p>
-                                <p class="text-[10px] text-indigo-600 font-bold mt-1">🎁 উপহার: ${r.gift}</p>
-                            </div>
-                            <span class="text-[10px] font-bold px-2.5 py-1 rounded-full ${unlocked ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}">
-                                ${unlocked ? 'Unlocked' : 'Locked'}
-                            </span>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
+
+            <label class="text-[11px] font-bold">
+                Sender Number
+            </label>
+
+            <input
+                type="text"
+                name="sender_number"
+                placeholder="যে নম্বর থেকে টাকা পাঠিয়েছেন"
+                class="w-full border rounded-xl p-3 text-xs mt-1"
+                required
+            >
+
         </div>
-    `;
-}
 
-function renderOrders() {
-    const user = getCurrentUser();
-    const userOrders = db.orders.filter(o => o.userId === user.id);
 
-    return `
         <div>
-            <h2 class="text-base font-bold mb-3">📦 My Orders</h2>
-            ${userOrders.length === 0 ? `<div class="text-center text-gray-400 text-xs py-10">কোনো অর্ডার পাওয়া যায়নি</div>` : ''}
-            <div class="space-y-2.5">
-                ${userOrders.map(o => `
-                    <div class="bg-white border rounded-xl p-3 shadow-sm text-xs">
-                        <div class="flex justify-between font-bold">
-                            <span>${o.packageName} (${o.quantity}টি)</span>
-                            <span class="text-indigo-600">৳${o.total}</span>
-                        </div>
-                        <div class="text-gray-500 text-[11px] mt-1">UID: ${o.uid}</div>
-                        <div class="text-gray-400 text-[10px]">${o.date}</div>
-                        <div class="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold ${o.status === 'Complete' ? 'bg-green-100 text-green-700' : o.status === 'Cancelled' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}">
-                            ${o.status}
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
+
+            <label class="text-[11px] font-bold">
+                Transaction ID
+            </label>
+
+            <input
+                type="text"
+                name="trx_id"
+                placeholder="TrxID"
+                class="w-full border rounded-xl p-3 text-xs mt-1"
+                required
+            >
+
         </div>
-    `;
-}
 
-function renderAdmin() {
-    if (!db.adminLogged) {
-        return `
-            <div class="py-10">
-                <div class="bg-white border rounded-2xl p-5 shadow-sm">
-                    <h2 class="text-base font-bold text-center mb-3">🔐 Admin Login</h2>
-                    <input type="password" id="admin-pass-input" placeholder="Admin Password" class="w-full border rounded-xl p-2.5 text-xs mb-3">
-                    <button onclick="loginAdmin()" class="w-full bg-indigo-600 text-white font-bold py-2.5 rounded-xl text-xs">Login</button>
-                    <button onclick="switchTab('home')" class="w-full text-gray-500 text-xs mt-3 text-center">Back to Home</button>
-                </div>
+
+        <button
+            class="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs">
+
+            Deposit Submit
+
+        </button>
+
+    </form>
+
+
+    <div class="mt-4">
+
+        <h3 class="font-bold text-sm mb-2">
+            My Deposit History
+        </h3>
+
+        <?php
+
+        $stmt = $pdo->prepare("
+            SELECT *
+            FROM deposits
+            WHERE user_id = ?
+            ORDER BY id DESC
+        ");
+
+        $stmt->execute([$user['id']]);
+
+        $deposits = $stmt->fetchAll();
+
+        ?>
+
+        <?php foreach ($deposits as $d): ?>
+
+        <div class="bg-white border rounded-xl p-3 mb-2 text-xs">
+
+            <div class="flex justify-between font-bold">
+
+                <span>
+                    ৳<?= number_format((float)$d['amount'], 2) ?>
+                </span>
+
+                <span>
+                    <?= e($d['status']) ?>
+                </span>
+
             </div>
-        `;
-    }
 
-    return `
+            <div class="text-[10px] text-gray-500 mt-1">
+
+                <?= e($d['method']) ?>
+
+                ·
+
+                <?= e($d['trx_id']) ?>
+
+            </div>
+
+            <div class="text-[10px] text-gray-400">
+                <?= e($d['created_at']) ?>
+            </div>
+
+        </div>
+
+        <?php endforeach; ?>
+
+    </div>
+
+</div>
+
+
+<?php
+
+/* =====================================================
+   ORDERS
+===================================================== */
+
+elseif ($page === 'orders'):
+
+require_login();
+
+$stmt = $pdo->prepare("
+    SELECT *
+    FROM orders
+    WHERE user_id = ?
+    ORDER BY id DESC
+");
+
+$stmt->execute([$user['id']]);
+
+$orders = $stmt->fetchAll();
+
+?>
+
+<div>
+
+    <h2 class="text-base font-bold mb-3">
+        📦 My Orders
+    </h2>
+
+
+    <?php if (!$orders): ?>
+
+        <div class="text-center text-gray-400 text-xs py-10">
+            কোনো Order পাওয়া যায়নি।
+        </div>
+
+    <?php endif; ?>
+
+
+    <?php foreach ($orders as $order): ?>
+
+    <div class="bg-white border rounded-xl p-3 mb-2 shadow-sm text-xs">
+
+        <div class="flex justify-between font-bold">
+
+            <span>
+                <?= e($order['product_name']) ?>
+            </span>
+
+            <span class="text-indigo-600">
+                ৳<?= number_format((float)$order['total'], 2) ?>
+            </span>
+
+        </div>
+
+        <div class="text-gray-500 text-[11px] mt-1">
+            Quantity: <?= (int)$order['quantity'] ?>
+        </div>
+
+        <div class="text-gray-500 text-[11px] mt-1 break-all">
+            <?= e($order['target_value']) ?>
+        </div>
+
+        <div class="text-gray-400 text-[10px] mt-1">
+            <?= e($order['created_at']) ?>
+        </div>
+
+        <div class="mt-2">
+
+            <span class="
+                inline-block
+                px-2 py-1
+                rounded
+                text-[10px]
+                font-bold
+
+                <?=
+                $order['status'] === 'Complete'
+                    ? 'bg-green-100 text-green-700'
+                    : (
+                        $order['status'] === 'Cancelled'
+                        ? 'bg-red-100 text-red-700'
+                        : (
+                            $order['status'] === 'Processing'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                        )
+                    )
+                ?>
+            ">
+
+                <?= e($order['status']) ?>
+
+            </span>
+
+        </div>
+
+    </div>
+
+    <?php endforeach; ?>
+
+</div>
+
+
+<?php
+
+/* =====================================================
+   ADMIN LOGIN
+===================================================== */
+
+elseif ($page === 'admin_login'):
+
+?>
+
+<div class="py-10">
+
+    <div class="bg-white border rounded-2xl p-5 shadow-sm">
+
+        <h2 class="text-base font-bold text-center mb-3">
+            🔐 Admin Login
+        </h2>
+
+        <form method="post">
+
+            <input type="hidden"
+                   name="csrf"
+                   value="<?= e(csrf_token()) ?>">
+
+            <input type="hidden"
+                   name="action"
+                   value="admin_login">
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Admin Password"
+                class="w-full border rounded-xl p-3 text-xs mb-3"
+                required
+            >
+
+            <button
+                class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs">
+
+                Login
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<?php
+
+/* =====================================================
+   ADMIN
+===================================================== */
+
+elseif ($page === 'admin'):
+
+require_admin();
+
+$section = $_GET['section'] ?? 'dashboard';
+
+?>
+
+<div>
+
+    <div class="bg-indigo-600 text-white rounded-xl p-3 flex justify-between items-center mb-3">
+
+        <span class="font-bold text-xs">
+            Admin Panel
+        </span>
+
+        <form method="post">
+
+            <input type="hidden"
+                   name="csrf"
+                   value="<?= e(csrf_token()) ?>">
+
+            <input type="hidden"
+                   name="action"
+                   value="admin_logout">
+
+            <button
+                class="bg-red-500 px-2 py-1 rounded text-[10px]">
+
+                Logout
+
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- ADMIN MENU -->
+
+    <div class="grid grid-cols-3 gap-1.5 mb-4 text-[10px]">
+
+        <?php
+
+        $adminLinks = [
+            'dashboard' => 'Dashboard',
+            'categories' => 'Categories',
+            'products' => 'Products',
+            'orders' => 'Orders',
+            'deposits' => 'Deposits',
+            'customers' => 'Customers',
+            'settings' => 'Settings'
+        ];
+
+        foreach ($adminLinks as $key => $label):
+
+        ?>
+
+        <a href="?page=admin&section=<?= $key ?>"
+           class="
+           p-2 rounded-lg font-bold text-center
+           <?= $section === $key
+                ? 'bg-indigo-600 text-white'
+                : 'bg-white border'
+           ?>
+           ">
+
+            <?= $label ?>
+
+        </a>
+
+        <?php endforeach; ?>
+
+    </div>
+
+
+<?php
+
+/* =====================================================
+   ADMIN DASHBOARD
+===================================================== */
+
+if ($section === 'dashboard'):
+
+$userCount = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+$orderCount = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
+$depositCount = $pdo->query("SELECT COUNT(*) FROM deposits WHERE status='Pending'")->fetchColumn();
+$productCount = $pdo->query("SELECT COUNT(*) FROM products")->fetchColumn();
+
+?>
+
+<div class="grid grid-cols-2 gap-2">
+
+    <div class="bg-white border rounded-xl p-3 text-xs">
+        Users
+        <b class="block text-lg">
+            <?= (int)$userCount ?>
+        </b>
+    </div>
+
+    <div class="bg-white border rounded-xl p-3 text-xs">
+        Products
+        <b class="block text-lg">
+            <?= (int)$productCount ?>
+        </b>
+    </div>
+
+    <div class="bg-white border rounded-xl p-3 text-xs">
+        Orders
+        <b class="block text-lg">
+            <?= (int)$orderCount ?>
+        </b>
+    </div>
+
+    <div class="bg-white border rounded-xl p-3 text-xs">
+        Pending Deposits
+        <b class="block text-lg text-amber-600">
+            <?= (int)$depositCount ?>
+        </b>
+    </div>
+
+</div>
+
+
+<div class="bg-indigo-50 rounded-xl p-3 mt-4 text-xs">
+
+    <b>Website Management</b>
+
+    <p class="mt-1 text-gray-600">
+        Categories, products, price, description,
+        requirements এবং payment settings এই Admin Panel থেকে পরিবর্তন করতে পারবেন।
+    </p>
+
+</div>
+
+
+<?php
+
+/* =====================================================
+   ADMIN CATEGORIES
+===================================================== */
+
+elseif ($section === 'categories'):
+
+$allCats = $pdo->query("
+    SELECT *
+    FROM categories
+    ORDER BY id DESC
+")->fetchAll();
+
+?>
+
+<h2 class="font-bold text-sm mb-2">
+    Add Category
+</h2>
+
+<form method="post"
+      class="bg-white border rounded-xl p-3 space-y-2 mb-4">
+
+    <input type="hidden"
+           name="csrf"
+           value="<?= e(csrf_token()) ?>">
+
+    <input type="hidden"
+           name="action"
+           value="add_category">
+
+    <input
+        name="name"
+        placeholder="Category Name"
+        class="w-full border rounded p-2 text-xs"
+        required
+    >
+
+    <input
+        name="slug"
+        placeholder="Slug যেমন facebook"
+        class="w-full border rounded p-2 text-xs"
+        required
+    >
+
+    <input
+        name="icon"
+        placeholder="Logo/Icon যেমন 📘"
+        class="w-full border rounded p-2 text-xs"
+        value="📦"
+    >
+
+    <textarea
+        name="description"
+        placeholder="Category Description"
+        class="w-full border rounded p-2 text-xs"
+    ></textarea>
+
+    <button
+        class="w-full bg-green-600 text-white py-2 rounded font-bold text-xs">
+
+        Add Category
+
+    </button>
+
+</form>
+
+
+<?php foreach ($allCats as $cat): ?>
+
+<div class="bg-white border rounded-xl p-3 mb-2">
+
+    <div class="flex justify-between">
+
         <div>
-            <div class="bg-indigo-600 text-white rounded-xl p-3 flex justify-between items-center mb-3">
-                <span class="font-bold text-xs">Admin Panel</span>
-                <button onclick="db.adminLogged=false; render();" class="bg-red-500 px-2 py-1 rounded text-[10px]">Logout</button>
+
+            <div class="font-bold text-sm">
+                <?= e($cat['icon']) ?>
+                <?= e($cat['name']) ?>
             </div>
 
-            <div class="grid grid-cols-3 gap-1.5 mb-3 text-[11px]">
-                <button onclick="setAdminSec('dashboard')" class="p-2 rounded-lg font-bold ${db.adminSection==='dashboard'?'bg-indigo-600 text-white':'bg-white border'}">Dashboard</button>
-                <button onclick="setAdminSec('packages')" class="p-2 rounded-lg font-bold ${db.adminSection==='packages'?'bg-indigo-600 text-white':'bg-white border'}">Packages</button>
-                <button onclick="setAdminSec('orders')" class="p-2 rounded-lg font-bold ${db.adminSection==='orders'?'bg-indigo-600 text-white':'bg-white border'}">Orders</button>
-                <button onclick="setAdminSec('deposits')" class="p-2 rounded-lg font-bold ${db.adminSection==='deposits'?'bg-indigo-600 text-white':'bg-white border'}">Deposits</button>
-                <button onclick="setAdminSec('customers')" class="p-2 rounded-lg font-bold ${db.adminSection==='customers'?'bg-indigo-600 text-white':'bg-white border'}">Customers</button>
-                <button onclick="setAdminSec('settings')" class="p-2 rounded-lg font-bold ${db.adminSection==='settings'?'bg-indigo-600 text-white':'bg-white border'}">Settings</button>
+            <div class="text-[10px] text-gray-500">
+                <?= e($cat['slug']) ?>
             </div>
 
-            <div id="admin-body">
-                ${renderAdminContent()}
-            </div>
         </div>
-    `;
-}
 
-function loginAdmin() {
-    const val = document.getElementById("admin-pass-input").value;
-    if (val === ADMIN_PASSWORD) {
-        db.adminLogged = true;
-        render();
-    } else {
-        alert("ভুল পাসওয়ার্ড");
-    }
-}
+        <form method="post"
+              onsubmit="return confirm('Delete this category?')">
 
-function setAdminSec(sec) {
-    db.adminSection = sec;
-    render();
-}
+            <input type="hidden"
+                   name="csrf"
+                   value="<?= e(csrf_token()) ?>">
 
-function renderAdminContent() {
-    if (db.adminSection === 'dashboard') {
-        const pendingOrders = db.orders.filter(o => o.status === 'Pending').length;
-        const pendingDeposits = db.deposits.filter(d => d.status === 'Pending').length;
-        return `
-            <div class="grid grid-cols-2 gap-2 text-xs">
-                <div class="bg-white border p-3 rounded-xl">Users: <span class="font-bold">${db.users.length}</span></div>
-                <div class="bg-white border p-3 rounded-xl">Orders: <span class="font-bold">${db.orders.length}</span></div>
-                <div class="bg-white border p-3 rounded-xl">Pending Orders: <span class="font-bold text-amber-600">${pendingOrders}</span></div>
-                <div class="bg-white border p-3 rounded-xl">Pending Deposits: <span class="font-bold text-amber-600">${pendingDeposits}</span></div>
-            </div>
-            <button onclick="switchTab('home')" class="mt-4 w-full bg-gray-900 text-white py-2.5 rounded-xl text-xs">Go to Website</button>
-        `;
-    }
-    if (db.adminSection === 'packages') {
-        return `
-            <div class="bg-white border p-3 rounded-xl mb-3 text-xs space-y-2">
-                <div class="font-bold">Add Package</div>
-                <input type="text" id="new-pkg-name" placeholder="Name" class="w-full border p-2 rounded">
-                <input type="number" id="new-pkg-price" placeholder="Price" class="w-full border p-2 rounded">
-                <select id="new-pkg-cat" class="w-full border p-2 rounded">
-                    <option value="diamond">Diamond</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="weekly_lite">Weekly Lite</option>
-                    <option value="monthly">Monthly</option>
-                </select>
-                <button onclick="addNewPackage()" class="w-full bg-green-600 text-white py-2 rounded font-bold">Add</button>
-            </div>
-            <div class="space-y-2 text-xs">
-                ${db.packages.map(p => `
-                    <div class="bg-white border p-2.5 rounded-xl flex justify-between items-center">
-                        <div>
-                            <div class="font-bold">${p.name} - ৳${p.price}</div>
-                            <div class="text-[10px] text-gray-500">${p.category}</div>
-                        </div>
-                        <button onclick="deletePkg(${p.id})" class="bg-red-500 text-white px-2 py-1 rounded text-[10px]">Delete</button>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-    if (db.adminSection === 'orders') {
-        return `
-            <div class="space-y-2.5 text-xs">
-                ${db.orders.map(o => `
-                    <div class="bg-white border p-3 rounded-xl">
-                        <div class="font-bold">${o.packageName} - ৳${o.total}</div>
-                        <div class="text-[11px] text-gray-600">User: ${o.userPhone} | UID: ${o.uid}</div>
-                        <div class="text-[10px] text-gray-400">${o.date}</div>
-                        <div class="flex gap-1 mt-2">
-                            <button onclick="setOrderStatus(${o.id}, 'Pending')" class="bg-amber-500 text-white px-2 py-1 rounded text-[10px]">Pending</button>
-                            <button onclick="setOrderStatus(${o.id}, 'Complete')" class="bg-green-600 text-white px-2 py-1 rounded text-[10px]">Complete</button>
-                            <button onclick="setOrderStatus(${o.id}, 'Cancelled')" class="bg-red-500 text-white px-2 py-1 rounded text-[10px]">Cancel</button>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-    if (db.adminSection === 'deposits') {
-        return `
-            <div class="space-y-2.5 text-xs">
-                ${db.deposits.map(d => `
-                    <div class="bg-white border p-3 rounded-xl">
-                        <div class="font-bold">${d.userPhone} - ৳${d.amount}</div>
-                        <div class="text-[11px]">Method: ${d.method} | Trx: ${d.trxId}</div>
-                        <div class="text-[10px] text-gray-400">Sender: ${d.senderNumber} | Status: ${d.status}</div>
-                        ${d.status === 'Pending' ? `
-                            <div class="flex gap-2 mt-2">
-                                <button onclick="approveDeposit(${d.id})" class="bg-green-600 text-white px-3 py-1 rounded text-[10px]">Approve</button>
-                                <button onclick="cancelDeposit(${d.id})" class="bg-red-500 text-white px-3 py-1 rounded text-[10px]">Cancel</button>
-                            </div>
-                        ` : ''}
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-    if (db.adminSection === 'customers') {
-        return `
-            <div class="space-y-2.5 text-xs">
-                ${db.users.map(u => `
-                    <div class="bg-white border p-3 rounded-xl flex justify-between items-center">
-                        <div>
-                            <div class="font-bold">${u.phone}</div>
-                            <div class="text-[11px] text-indigo-600">Balance: ৳${u.balance || 0}</div>
-                        </div>
-                        <button onclick="addBalancePrompt(${u.id})" class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px]">Add Balance</button>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
-    if (db.adminSection === 'settings') {
-        return `
-            <div class="bg-white border p-3 rounded-xl text-xs space-y-2">
-                <div class="font-bold">Settings</div>
-                <label>Shop Name</label>
-                <input type="text" id="set-name" value="${db.settings.shopName}" class="w-full border p-2 rounded">
-                <label>Payment Number</label>
-                <input type="text" id="set-pay" value="${db.settings.paymentNumber}" class="w-full border p-2 rounded">
-                <label>WhatsApp Number</label>
-                <input type="text" id="set-wa" value="${db.settings.whatsappNumber}" class="w-full border p-2 rounded">
-                <label>Telegram Username/Link</label>
-                <input type="text" id="set-tg" value="${db.settings.telegramUsername || ''}" class="w-full border p-2 rounded">
-                <label>Notice</label>
-                <textarea id="set-notice" class="w-full border p-2 rounded">${db.settings.notice}</textarea>
-                <button onclick="saveSettings()" class="w-full bg-indigo-600 text-white py-2 rounded font-bold">Save Changes</button>
-            </div>
-        `;
-    }
-}
+            <input type="hidden"
+                   name="action"
+                   value="delete_category">
 
-function addNewPackage() {
-    const name = document.getElementById("new-pkg-name").value.trim();
-    const price = Number(document.getElementById("new-pkg-price").value);
-    const category = document.getElementById("new-pkg-cat").value;
-    if(!name || !price) {
-        alert("সব তথ্য দিন");
-        return;
-    }
-    db.packages.push({id: Date.now(), name, price, category, active: true});
-    saveData();
-    render();
-}
+            <input type="hidden"
+                   name="id"
+                   value="<?= (int)$cat['id'] ?>">
 
-function deletePkg(id) {
-    db.packages = db.packages.filter(p => p.id !== id);
-    saveData();
-    render();
-}
+            <button
+                class="bg-red-500 text-white px-2 py-1 rounded text-[10px]">
 
-function setOrderStatus(id, status) {
-    const o = db.orders.find(x => x.id === id);
-    if(o) {
-        o.status = status;
-        saveData();
-        render();
-    }
-}
+                Delete
 
-function approveDeposit(id) {
-    const d = db.deposits.find(x => x.id === id);
-    if(d && d.status === 'Pending') {
-        d.status = 'Approved';
-        const user = db.users.find(u => u.id === d.userId);
-        if(user) {
-            user.balance = (user.balance || 0) + d.amount;
-        }
-        saveData();
-        render();
-    }
-}
+            </button>
 
-function cancelDeposit(id) {
-    const d = db.deposits.find(x => x.id === id);
-    if(d) {
-        d.status = 'Cancelled';
-        saveData();
-        render();
-    }
-}
+        </form>
 
-function addBalancePrompt(userId) {
-    const amt = prompt("কত টাকা যোগ করতে চান?");
-    if(amt && !isNaN(amt)) {
-        const user = db.users.find(u => u.id === userId);
-        if(user) {
-            user.balance = (user.balance || 0) + Number(amt);
-            saveData();
-            render();
-        }
-    }
-}
+    </div>
 
-function saveSettings() {
-    db.settings.shopName = document.getElementById("set-name").value;
-    db.settings.paymentNumber = document.getElementById("set-pay").value;
-    db.settings.whatsappNumber = document.getElementById("set-wa").value;
-    db.settings.telegramUsername = document.getElementById("set-tg").value;
-    db.settings.notice = document.getElementById("set-notice").value;
-    saveData();
-    alert("সেটিংস সংরক্ষিত হয়েছে!");
-    render();
-}
+</div>
 
-render();
-</script>
+<?php endforeach; ?>
+
+
+<?php
+
+/* =====================================================
+   ADMIN PRODUCTS
+===================================================== */
+
+elseif ($section === 'products'):
+
+$allCats = $pdo->query("
+    SELECT *
+    FROM categories
+    ORDER BY name
+")->fetchAll();
+
+$allProducts = $pdo->query("
+    SELECT p.*, c.name AS category_name
+    FROM products p
+    JOIN categories c ON c.id = p.category_id
+    ORDER BY p.id DESC
+")->fetchAll();
+
+?>
+
+<h2 class="font-bold text-sm mb-2">
+    Add Product / Package
+</h2>
+
+<form method="post"
+      class="bg-white border rounded-xl p-3 space-y-2 mb-4">
+
+    <input type="hidden"
+           name="csrf"
+           value="<?= e(csrf_token()) ?>">
+
+    <input type="hidden"
+           name="action"
+           value="add_product">
+
+
+    <select
+        name="category_id"
+        class="w-full border rounded p-2 text-xs"
+        required>
+
+        <option value="">
+            Select Category
+        </option>
+
+        <?php foreach ($allCats as $cat): ?>
+
+            <option value="<?= (int)$cat['id'] ?>">
+                <?= e($cat['icon']) ?>
+                <?= e($cat['name']) ?>
+            </option>
+
+        <?php endforeach; ?>
+
+    </select>
+
+
+    <input
+        name="name"
+        placeholder="Product Name"
+        class="w-full border rounded p-2 text-xs"
+        required
+    >
+
+
+    <input
+        type="number"
+        name="price"
+        placeholder="Price"
+        step="0.01"
+        min="0"
+        class="w-full border rounded p-2 text-xs"
+        required
+    >
+
+
+    <textarea
+        name="description"
+        placeholder="Product Description"
+        class="w-full border rounded p-2 text-xs"
+    ></textarea>
+
+
+    <textarea
+        name="requirements"
+        placeholder="Rules / Requirements"
+        class="w-full border rounded p-2 text-xs"
+    ></textarea>
+
+
+    <input
+        name="input_label"
+        placeholder="Input Label যেমন Facebook Video Link"
+        class="w-full border rounded p-2 text-xs"
+    >
+
+
+    <button
+        class="w-full bg-green-600 text-white py-2 rounded font-bold text-xs">
+
+        Add Product
+
+    </button>
+
+</form>
+
+
+<h2 class="font-bold text-sm mb-2">
+    Existing Products
+</h2>
+
+
+<?php foreach ($allProducts as $p): ?>
+
+<div class="bg-white border rounded-xl p-3 mb-3">
+
+<form method="post">
+
+    <input type="hidden"
+           name="csrf"
+           value="<?= e(csrf_token()) ?>">
+
+    <input type="hidden"
+           name="action"
+           value="update_product">
+
+    <input type="hidden"
+           name="id"
+           value="<?= (int)$p['id'] ?>">
+
+
+    <div class="text-[10px] text-indigo-600 font-bold mb-1">
+        <?= e($p['category_name']) ?>
+    </div>
+
+
+    <input
+        name="name"
+        value="<?= e($p['name']) ?>"
+        class="w-full border rounded p-2 text-xs mb-2"
+    >
+
+
+    <input
+        type="number"
+        name="price"
+        value="<?= e((string)$p['price']) ?>"
+        step="0.01"
+        class="w-full border rounded p-2 text-xs mb-2"
+    >
+
+
+    <textarea
+        name="description"
+        class="w-full border rounded p-2 text-xs mb-2"
+        placeholder="Description"
+    ><?= e($p['description']) ?></textarea>
+
+
+    <textarea
+        name="requirements"
+        class="w-full border rounded p-2 text-xs mb-2"
+        placeholder="Requirements"
+    ><?= e($p['requirements']) ?></textarea>
+
+
+    <input
+        name="input_label"
+        value="<?= e($p['input_label']) ?>"
+        class="w-full border rounded p-2 text-xs mb-2"
+    >
+
+
+    <label class="text-xs">
+
+        <input
+            type="checkbox"
+            name="active"
+            <?= $p['active'] ? 'checked' : '' ?>
+        >
+
+        Active
+
+    </label>
+
+
+    <button
+        class="w-full bg-indigo-600 text-white py-2 rounded font-bold text-xs mt-2">
+
+        Save Product
+
+    </button>
+
+</form>
+
+
+<form method="post"
+      class="mt-2"
+      onsubmit="return confirm('Delete this product?')">
+
+    <input type="hidden"
+           name="csrf"
+           value="<?= e(csrf_token()) ?>">
+
+    <input type="hidden"
+           name="action"
+           value="delete_product">
+
+    <input type="hidden"
+           name="id"
+           value="<?= (int)$p['id'] ?>">
+
+    <button
+        class="w-full bg-red-500 text-white py-2 rounded font-bold text-xs">
+
+        Delete Product
+
+    </button>
+
+</form>
+
+</div>
+
+<?php endforeach; ?>
+
+
+<?php
+
+/* =====================================================
+   ADMIN ORDERS
+===================================================== */
+
+elseif ($section === 'orders'):
+
+$orders = $pdo->query("
+    SELECT o.*, u.phone
+    FROM orders o
+    JOIN users u ON u.id = o.user_id
+    ORDER BY o.id DESC
+")->fetchAll();
+
+?>
+
+<?php foreach ($orders as $o): ?>
+
+<div class="bg-white border rounded-xl p-3 mb-2 text-xs">
+
+    <div class="flex justify-between font-bold">
+
+        <span>
+            <?= e($o['product_name']) ?>
+        </span>
+
+        <span class="text-indigo-600">
+            ৳<?= number_format((float)$o['total'], 2) ?>
+        </span>
+
+    </div>
+
+    <div class="text-gray-500 mt-1">
+        User: <?= e($o['phone']) ?>
+    </div>
+
+    <div class="text-gray-500 mt-1">
+        Quantity: <?= (int)$o['quantity'] ?>
+    </div>
+
+    <div class="text-gray-500 mt-1 break-all">
+        Target: <?= e($o['target_value']) ?>
+    </div>
+
+    <div class="text-gray-400 mt-1">
+        <?= e($o['created_at']) ?>
+    </div>
+
+
+    <div class="flex gap-1 mt-2 flex-wrap">
+
+        <?php foreach (['Pending','Processing','Complete','Cancelled'] as $status): ?>
+
+        <form method="post">
+
+            <input type="hidden"
+                   name="csrf"
+                   value="<?= e(csrf_token()) ?>">
+
+            <input type="hidden"
+                   name="action"
+                   value="order_status">
+
+            <input type="hidden"
+                   name="id"
+                   value="<?= (int)$o['id'] ?>">
+
+            <input type="hidden"
+                   name="status"
+                   value="<?= e($status) ?>">
+
+            <button
+                class="
+                px-2 py-1 rounded text-[9px] text-white
+                <?= $status === 'Complete'
+                    ? 'bg-green-600'
+                    : (
+                        $status === 'Cancelled'
+                        ? 'bg-red-500'
+                        : (
+                            $status === 'Processing'
+                            ? 'bg-blue-600'
+                            : 'bg-amber-500'
+                        )
+                    )
+                ?>
+                ">
+
+                <?= $status ?>
+
+            </button>
+
+        </form>
+
+        <?php endforeach; ?>
+
+    </div>
+
+</div>
+
+<?php endforeach; ?>
+
+
+<?php
+
+/* =====================================================
+   ADMIN DEPOSITS
+===================================================== */
+
+elseif ($section === 'deposits'):
+
+$deposits = $pdo->query("
+    SELECT d.*, u.phone
+    FROM deposits d
+    JOIN users u ON u.id = d.user_id
+    ORDER BY d.id DESC
+")->fetchAll();
+
+?>
+
+<?php foreach ($deposits as $d): ?>
+
+<div class="bg-white border rounded-xl p-3 mb-2 text-xs">
+
+    <div class="flex justify-between font-bold">
+
+        <span>
+            <?= e($d['phone']) ?>
+        </span>
+
+        <span class="text-indigo-600">
+            ৳<?= number_format((float)$d['amount'], 2) ?>
+        </span>
+
+    </div>
+
+    <div class="mt-1">
+        Method: <?= e($d['method']) ?>
+    </div>
+
+    <div>
+        Sender: <?= e($d['sender_number']) ?>
+    </div>
+
+    <div>
+        TrxID: <?= e($d['trx_id']) ?>
+    </div>
+
+    <div class="text-gray-400 mt-1">
+        <?= e($d['created_at']) ?>
+    </div>
+
+
+    <?php if ($d['status'] === 'Pending'): ?>
+
+    <div class="flex gap-2 mt-2">
+
+        <form method="post">
+
+            <input type="hidden"
+                   name="csrf"
+                   value="<?= e(csrf_token()) ?>">
+
+            <input type="hidden"
+                   name="action"
+                   value="approve_deposit">
+
+            <input type="hidden"
+                   name="id"
+                   value="<?= (int)$d['id'] ?>">
+
+            <button
+                class="bg-green-600 text-white px-3 py-1 rounded text-[10px]">
+
+                Approve
+
+            </button>
+
+        </form>
+
+
+        <form method="post">
+
+            <input type="hidden"
+                   name="csrf"
+                   value="<?= e(csrf_token()) ?>">
+
+            <input type="hidden"
+                   name="action"
+                   value="cancel_deposit">
+
+            <input type="hidden"
+                   name="id"
+                   value="<?= (int)$d['id'] ?>">
+
+            <button
+                class="bg-red-500 text-white px-3 py-1 rounded text-[10px]">
+
+                Cancel
+
+            </button>
+
+        </form>
+
+    </div>
+
+    <?php else: ?>
+
+    <div class="mt-2 font-bold">
+        Status: <?= e($d['status']) ?>
+    </div>
+
+    <?php endif; ?>
+
+</div>
+
+<?php endforeach; ?>
+
+
+<?php
+
+/* =====================================================
+   ADMIN CUSTOMERS
+===================================================== */
+
+elseif ($section === 'customers'):
+
+$users = $pdo->query("
+    SELECT *
+    FROM users
+    ORDER BY id DESC
+")->fetchAll();
+
+?>
+
+<?php foreach ($users as $u): ?>
+
+<div class="bg-white border rounded-xl p-3 mb-2 text-xs">
+
+    <div class="font-bold">
+        <?= e($u['phone']) ?>
+    </div>
+
+    <div class="text-indigo-600 mt-1">
+        Balance:
+        ৳<?= number_format((float)$u['balance'], 2) ?>
+    </div>
+
+    <div class="text-gray-500">
+        Total Spend:
+        ৳<?= number_format((float)$u['total_spend'], 2) ?>
+    </div>
+
+    <div class="text-gray-400 text-[10px]">
+        Joined: <?= e($u['created_at']) ?>
+    </div>
+
+
+    <form method="post"
+          class="flex gap-2 mt-2">
+
+        <input type="hidden"
+               name="csrf"
+               value="<?= e(csrf_token()) ?>">
+
+        <input type="hidden"
+               name="action"
+               value="admin_add_balance">
+
+        <input type="hidden"
+               name="user_id"
+               value="<?= (int)$u['id'] ?>">
+
+        <input
+            type="number"
+            name="amount"
+            min="1"
+            placeholder="Amount"
+            class="flex-1 border rounded p-2 text-xs"
+            required
+        >
+
+        <button
+            class="bg-indigo-600 text-white px-3 rounded text-[10px] font-bold">
+
+            Add
+
+        </button>
+
+    </form>
+
+</div>
+
+<?php endforeach; ?>
+
+
+<?php
+
+/* =====================================================
+   ADMIN SETTINGS
+===================================================== */
+
+elseif ($section === 'settings'):
+
+?>
+
+<div class="bg-white border rounded-xl p-4">
+
+    <h2 class="font-bold text-sm mb-3">
+        ⚙️ Website Settings
+    </h2>
+
+    <form method="post" class="space-y-3">
+
+        <input type="hidden"
+               name="csrf"
+               value="<?= e(csrf_token()) ?>">
+
+        <input type="hidden"
+               name="action"
+               value="save_settings">
+
+
+        <label class="text-xs font-bold">
+            Shop Name
+        </label>
+
+        <input
+            name="shop_name"
+            value="<?= e($settings['shop_name']) ?>"
+            class="w-full border rounded p-2 text-xs"
+        >
+
+
+        <label class="text-xs font-bold">
+            Payment Number
+        </label>
+
+        <input
+            name="payment_number"
+            value="<?= e($settings['payment_number']) ?>"
+            class="w-full border rounded p-2 text-xs"
+        >
+
+
+        <label class="text-xs font-bold">
+            WhatsApp Number
+        </label>
+
+        <input
+            name="whatsapp_number"
+            value="<?= e($settings['whatsapp_number']) ?>"
+            class="w-full border rounded p-2 text-xs"
+        >
+
+
+        <label class="text-xs font-bold">
+            Telegram Username
+        </label>
+
+        <input
+            name="telegram_username"
+            value="<?= e($settings['telegram_username']) ?>"
+            class="w-full border rounded p-2 text-xs"
+        >
+
+
+        <label class="text-xs font-bold">
+            Website Notice
+        </label>
+
+        <textarea
+            name="notice"
+            class="w-full border rounded p-2 text-xs"
+        ><?= e($settings['notice']) ?></textarea>
+
+
+        <button
+            class="w-full bg-indigo-600 text-white py-2.5 rounded font-bold text-xs">
+
+            Save Settings
+
+        </button>
+
+    </form>
+
+</div>
+
+
+<?php endif; ?>
+
+</div>
+
+
+<?php
+
+/* =====================================================
+   UNKNOWN PAGE
+===================================================== */
+
+else:
+
+?>
+
+<div class="text-center py-10">
+
+    <h2 class="font-bold">
+        Page Not Found
+    </h2>
+
+    <a href="?page=home"
+       class="text-indigo-600 text-xs">
+        Go Home
+    </a>
+
+</div>
+
+<?php endif; ?>
+
+</main>
+
+
+<!-- BOTTOM NAV -->
+
+<nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t flex justify-around py-2.5 z-30">
+
+    <a href="?page=home"
+       class="text-xs text-center text-indigo-600 font-bold">
+
+        🏠
+        <br>
+        Home
+
+    </a>
+
+
+    <?php if ($user): ?>
+
+    <a href="?page=deposit"
+       class="text-xs text-center text-gray-500">
+
+        💰
+        <br>
+        Deposit
+
+    </a>
+
+
+    <a href="?page=orders"
+       class="text-xs text-center text-gray-500">
+
+        📦
+        <br>
+        Orders
+
+    </a>
+
+
+    <form method="post">
+
+        <input type="hidden"
+               name="csrf"
+               value="<?= e(csrf_token()) ?>">
+
+        <input type="hidden"
+               name="action"
+               value="logout">
+
+        <button
+            class="text-xs text-center text-red-500">
+
+            🚪
+            <br>
+            Logout
+
+        </button>
+
+    </form>
+
+    <?php else: ?>
+
+    <a href="?page=login"
+       class="text-xs text-center text-gray-500">
+
+        🔐
+        <br>
+        Login
+
+    </a>
+
+    <a href="?page=register"
+       class="text-xs text-center text-gray-500">
+
+        📝
+        <br>
+        Register
+
+    </a>
+
+    <?php endif; ?>
+
+</nav>
+
+
+<!-- FLOATING SUPPORT -->
+
+<div class="fixed bottom-16 right-4 z-40 flex flex-col gap-2">
+
+    <a
+        href="https://wa.me/<?= e($settings['whatsapp_number']) ?>"
+        target="_blank"
+        class="bg-green-500 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center">
+
+        💬
+
+    </a>
+
+
+    <a
+        href="https://t.me/<?= e($settings['telegram_username']) ?>"
+        target="_blank"
+        class="bg-sky-500 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center">
+
+        ✈️
+
+    </a>
+
+</div>
+
+</div>
+
 </body>
-  </html
+  </html>

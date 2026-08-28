@@ -759,9 +759,9 @@ function renderHome(){
             <p class="text-xs mt-1 opacity-90">${escapeHTML(db.settings.notice)}</p>
         </div>
 
-        <!-- SERVICES GRID -->
+        <!-- SERVICES GRID (Unlimited Services Support) -->
         <h2 class="font-bold text-sm mb-2">🛍️ Services</h2>
-        <div class="grid grid-cols-4 gap-2 mb-4">
+        <div class="grid grid-cols-4 gap-2 mb-4 max-h-[320px] overflow-y-auto no-scrollbar pr-1">
             ${services.map(s => `
                 <button onclick="selectService('${escapeAttr(s.id)}')"
                     class="bg-white border rounded-2xl p-2.5 text-center shadow-sm ${db.selectedService === s.id ? "border-indigo-600 ring-2 ring-indigo-100 bg-indigo-50/50" : ""}">
@@ -1304,7 +1304,7 @@ function renderAdminContent(){
             <textarea id="service-desc" placeholder="Service Description" class="w-full border p-2 rounded"></textarea>
             <button onclick="addService()" class="w-full bg-green-600 text-white py-2 rounded font-bold">Add Service</button>
         </div>
-        <div class="space-y-2">
+        <div class="space-y-2 max-h-[300px] overflow-y-auto no-scrollbar pr-1">
             ${db.services.map(s => `
                 <div class="card p-3 text-xs">
                     <div class="flex items-center gap-3">

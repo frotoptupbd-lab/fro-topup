@@ -37,6 +37,12 @@ button,input,select,textarea{
     align-items:center;
     justify-content:center;
     font-size:25px;
+    overflow:hidden;
+}
+.service-icon img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
 }
 .package-card{
     transition:.15s;
@@ -53,7 +59,7 @@ textarea{
 <body>
 
 <div id="app-container"
-     class="w-full max-w-sm sm:max-w-md bg-gray-100 h-screen sm:h-[844px] sm:rounded-[40px] sm:border-[8px] sm:border-gray-800 shadow-2xl relative pb-20 overflow-y-auto no-scrollbar">
+     class="w-full max-w-sm sm:max-w-md bg-gray-100 h-screen sm:h-[844px] sm:rounded-[40px] sm:border-[8px] sm:border-gray-800 shadow-2xl relative pb-24 overflow-y-auto no-scrollbar">
 
 <!-- HEADER -->
 <header class="bg-white border-b px-4 py-3 flex justify-between items-center sticky top-0 z-40">
@@ -118,7 +124,7 @@ textarea{
 
 <!-- BOTTOM NAV -->
 <nav id="bottom-nav"
-     class="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t flex justify-around py-2 z-30 hide">
+     class="fixed bottom-0 left-0 right-0 max-w-sm sm:max-w-md mx-auto bg-white border-t flex justify-around py-2.5 z-50 hide shadow-lg">
 
     <button onclick="switchTab('home')"
             id="nav-home"
@@ -195,6 +201,7 @@ const DEFAULT_SERVICES = [
         id:"freefire",
         name:"Free Fire",
         icon:"💎",
+        image:"",
         type:"game",
         active:true,
         description:"Free Fire Diamond ও Membership TopUp Service"
@@ -203,6 +210,7 @@ const DEFAULT_SERVICES = [
         id:"facebook",
         name:"Facebook",
         icon:"📘",
+        image:"",
         type:"social",
         active:true,
         description:"Facebook Like, Followers, Views ও Comments"
@@ -211,6 +219,7 @@ const DEFAULT_SERVICES = [
         id:"tiktok",
         name:"TikTok",
         icon:"🎵",
+        image:"",
         type:"social",
         active:true,
         description:"TikTok Likes, Followers ও Views"
@@ -219,6 +228,7 @@ const DEFAULT_SERVICES = [
         id:"youtube",
         name:"YouTube",
         icon:"▶️",
+        image:"",
         type:"social",
         active:true,
         description:"YouTube Views, Likes, Subscribers ও Comments"
@@ -227,6 +237,7 @@ const DEFAULT_SERVICES = [
         id:"telegram",
         name:"Telegram",
         icon:"✈️",
+        image:"",
         type:"social",
         active:true,
         description:"Telegram Members Service"
@@ -235,6 +246,7 @@ const DEFAULT_SERVICES = [
         id:"youtube_premium",
         name:"YouTube Premium",
         icon:"⭐",
+        image:"",
         type:"premium",
         active:true,
         description:"YouTube Premium Service"
@@ -243,6 +255,7 @@ const DEFAULT_SERVICES = [
         id:"capcut",
         name:"CapCut Premium",
         icon:"✂️",
+        image:"",
         type:"premium",
         active:true,
         description:"CapCut Premium Service"
@@ -255,7 +268,6 @@ const DEFAULT_SERVICES = [
 ========================================================= */
 
 const DEFAULT_PRODUCTS = [
-    /* FREE FIRE */
     {
         id:101,
         serviceId:"freefire",
@@ -344,8 +356,6 @@ const DEFAULT_PRODUCTS = [
         description:"Free Fire Monthly Membership.",
         rules:"সঠিক Free Fire UID দিতে হবে।"
     },
-
-    /* FACEBOOK */
     {
         id:201,
         serviceId:"facebook",
@@ -369,30 +379,6 @@ const DEFAULT_PRODUCTS = [
         rules:"Public post link দিতে হবে।"
     },
     {
-        id:203,
-        serviceId:"facebook",
-        name:"Facebook ID Followers - 100",
-        price:15,
-        category:"followers",
-        active:true,
-        inputType:"link",
-        description:"Facebook profile followers.",
-        rules:"Profile link দিতে হবে।"
-    },
-    {
-        id:204,
-        serviceId:"facebook",
-        name:"Facebook Video Views - 100",
-        price:8,
-        category:"views",
-        active:true,
-        inputType:"link",
-        description:"Facebook video views.",
-        rules:"Public video link দিতে হবে।"
-    },
-
-    /* TIKTOK */
-    {
         id:301,
         serviceId:"tiktok",
         name:"TikTok Account Followers - 100",
@@ -403,30 +389,6 @@ const DEFAULT_PRODUCTS = [
         description:"TikTok profile followers.",
         rules:"TikTok profile link দিতে হবে।"
     },
-    {
-        id:302,
-        serviceId:"tiktok",
-        name:"TikTok Video Like - 100",
-        price:10,
-        category:"likes",
-        active:true,
-        inputType:"link",
-        description:"TikTok video likes.",
-        rules:"Public TikTok video link দিতে হবে।"
-    },
-    {
-        id:303,
-        serviceId:"tiktok",
-        name:"TikTok Views - 100",
-        price:8,
-        category:"views",
-        active:true,
-        inputType:"link",
-        description:"TikTok video views.",
-        rules:"Public TikTok video link দিতে হবে।"
-    },
-
-    /* YOUTUBE */
     {
         id:401,
         serviceId:"youtube",
@@ -439,30 +401,6 @@ const DEFAULT_PRODUCTS = [
         rules:"Public YouTube video link দিতে হবে।"
     },
     {
-        id:402,
-        serviceId:"youtube",
-        name:"YouTube Video Likes - 100",
-        price:15,
-        category:"likes",
-        active:true,
-        inputType:"link",
-        description:"YouTube video likes.",
-        rules:"Public YouTube video link দিতে হবে।"
-    },
-    {
-        id:403,
-        serviceId:"youtube",
-        name:"YouTube Subscribers - 100",
-        price:30,
-        category:"followers",
-        active:true,
-        inputType:"link",
-        description:"YouTube channel subscribers.",
-        rules:"YouTube channel link দিতে হবে।"
-    },
-
-    /* TELEGRAM */
-    {
         id:501,
         serviceId:"telegram",
         name:"Telegram Members - 100",
@@ -473,8 +411,6 @@ const DEFAULT_PRODUCTS = [
         description:"Telegram channel or group members.",
         rules:"Public Telegram link দিতে হবে।"
     },
-
-    /* PREMIUM */
     {
         id:601,
         serviceId:"youtube_premium",
@@ -508,16 +444,7 @@ let db = {
     settings: getStorage("tb_settings", DEFAULT_SETTINGS),
     services: getStorage("tb_services", DEFAULT_SERVICES),
     products: getStorage("tb_products", DEFAULT_PRODUCTS),
-    packages: getStorage("tb_packages", [
-        {id:1,name:"25 Diamonds",price:26,category:"diamond",active:true},
-        {id:2,name:"50 Diamonds",price:50,category:"diamond",active:true},
-        {id:3,name:"70 Diamonds",price:70,category:"diamond",active:true},
-        {id:4,name:"100 Diamonds",price:100,category:"diamond",active:true},
-        {id:5,name:"120 Diamonds",price:120,category:"diamond",active:true},
-        {id:6,name:"Weekly Lite",price:165,category:"weekly_lite",active:true},
-        {id:7,name:"Weekly Membership",price:165,category:"weekly",active:true},
-        {id:8,name:"Monthly Membership",price:810,category:"monthly",active:true}
-    ]),
+    packages: getStorage("tb_packages", []),
     users: getStorage("tb_users", []),
     orders: getStorage("tb_orders", []),
     deposits: getStorage("tb_deposits", []),
@@ -792,7 +719,7 @@ function renderHome(){
                 <button onclick="selectService('${escapeAttr(s.id)}')"
                     class="bg-white border rounded-2xl p-2.5 text-center shadow-sm ${db.selectedService === s.id ? "border-indigo-600 ring-2 ring-indigo-100 bg-indigo-50/50" : ""}">
                     <div class="service-icon mx-auto bg-gray-100 text-lg">
-                        ${s.icon || "🛍️"}
+                        ${s.image ? `<img src="${s.image}" alt="">` : (s.icon || "🛍️")}
                     </div>
                     <div class="font-bold text-[10px] mt-1.5 truncate">
                         ${escapeHTML(s.name)}
@@ -1075,7 +1002,7 @@ function submitDeposit(){
 
 
 /* =========================================================
-   REWARDS & RANKS (GIVEAWAY SYSTEM)
+   REWARDS & RANKS
 ========================================================= */
 
 function renderRewards(){
@@ -1089,7 +1016,7 @@ function renderRewards(){
         { name: "Platinum", req: 10000, gift: "Weekly Lite (2x)" },
         { name: "Diamond", req: 25000, gift: "Weekly Membership" },
         { name: "Heroic", req: 50000, gift: "120 Diamonds" },
-        { name: "Master", req: 100000, gift: "Monthly Membership (6-7k Value)" },
+        { name: "Master", req: 100000, gift: "Monthly Membership" },
         { name: "Grand Master", req: 200000, gift: "Special VIP Reward" }
     ];
 
@@ -1321,6 +1248,12 @@ function renderAdminContent(){
             <div class="font-bold">➕ Add Service</div>
             <input id="service-name" placeholder="Service Name" class="w-full border p-2 rounded">
             <input id="service-icon" placeholder="Icon / Emoji যেমন 📘" class="w-full border p-2 rounded">
+            
+            <div>
+                <label class="text-[10px] text-gray-500 font-bold block mb-1">অথবা গ্যালারি থেকে ইমেজ আপলোড করুন:</label>
+                <input type="file" id="service-img-file" accept="image/*" class="w-full border p-2 rounded text-[10px] bg-white">
+            </div>
+
             <textarea id="service-desc" placeholder="Service Description" class="w-full border p-2 rounded"></textarea>
             <button onclick="addService()" class="w-full bg-green-600 text-white py-2 rounded font-bold">Add Service</button>
         </div>
@@ -1328,7 +1261,9 @@ function renderAdminContent(){
             ${db.services.map(s => `
                 <div class="card p-3 text-xs">
                     <div class="flex items-center gap-3">
-                        <div class="service-icon bg-gray-100">${s.icon || "🛍️"}</div>
+                        <div class="service-icon bg-gray-100">
+                            ${s.image ? `<img src="${s.image}" alt="">` : (s.icon || "🛍️")}
+                        </div>
                         <div class="flex-1">
                             <div class="font-bold">${escapeHTML(s.name)}</div>
                             <div class="text-[10px] text-gray-500">${escapeHTML(s.description || "")}</div>
@@ -1467,12 +1402,25 @@ function addService(){
     const name = document.getElementById("service-name").value.trim();
     const icon = document.getElementById("service-icon").value.trim() || "🛍️";
     const description = document.getElementById("service-desc").value.trim();
+    const fileInput = document.getElementById("service-img-file");
+
     if(!name){ alert("Service Name দিন"); return; }
 
     const id = "service_" + Date.now();
-    db.services.push({ id, name, icon, type: "custom", active: true, description });
-    saveData();
-    render();
+
+    if(fileInput.files && fileInput.files[0]){
+        const reader = new FileReader();
+        reader.onload = function(e){
+            db.services.push({ id, name, icon, image: e.target.result, type: "custom", active: true, description });
+            saveData();
+            render();
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        db.services.push({ id, name, icon, image: "", type: "custom", active: true, description });
+        saveData();
+        render();
+    }
 }
 
 function editService(id){
@@ -1480,7 +1428,7 @@ function editService(id){
     if(!s) return;
     const name = prompt("Service Name:", s.name);
     if(name === null) return;
-    const icon = prompt("Icon:", s.icon || "🛍️");
+    const icon = prompt("Icon / Emoji:", s.icon || "🛍️");
     if(icon === null) return;
     const description = prompt("Description:", s.description || "");
     if(description === null) return;
@@ -1488,8 +1436,30 @@ function editService(id){
     s.name = name.trim();
     s.icon = icon.trim() || "🛍️";
     s.description = description.trim();
-    saveData();
-    render();
+
+    // Option to upload image during edit via prompt/file or keep existing
+    const changeImg = confirm("গ্যালারি থেকে নতুন ছবি আপলোড করতে চান?");
+    if(changeImg){
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.onchange = e => {
+            const file = e.target.files[0];
+            if(file){
+                const reader = new FileReader();
+                reader.onload = event => {
+                    s.image = event.target.result;
+                    saveData();
+                    render();
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        input.click();
+    } else {
+        saveData();
+        render();
+    }
 }
 
 function toggleService(id){

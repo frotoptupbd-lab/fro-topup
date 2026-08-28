@@ -3,12 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>TOPUP BUZZ</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-*{box-sizing:border-box}
+*{
+    box-sizing:border-box;
+}
+
 body{
     margin:0;
     background:#111827;
@@ -18,17 +22,33 @@ body{
     align-items:center;
     min-height:100vh;
 }
+
 button,input,select,textarea{
     font-family:inherit;
 }
-.hide{display:none!important}
-.no-scrollbar::-webkit-scrollbar{display:none}
-.no-scrollbar{scrollbar-width:none}
+
+button{
+    cursor:pointer;
+}
+
+.hide{
+    display:none!important;
+}
+
+.no-scrollbar::-webkit-scrollbar{
+    display:none;
+}
+
+.no-scrollbar{
+    scrollbar-width:none;
+}
+
 .card{
     background:#fff;
     border:1px solid #e5e7eb;
     border-radius:16px;
 }
+
 .service-icon{
     width:48px;
     height:48px;
@@ -38,20 +58,66 @@ button,input,select,textarea{
     justify-content:center;
     font-size:25px;
     overflow:hidden;
+    flex-shrink:0;
 }
+
 .service-icon img{
     width:100%;
     height:100%;
     object-fit:cover;
 }
+
 .package-card{
     transition:.15s;
 }
+
 .package-card:active{
     transform:scale(.98);
 }
+
 textarea{
     resize:vertical;
+}
+
+.chat-box{
+    height:calc(100vh - 300px);
+    min-height:350px;
+    overflow-y:auto;
+}
+
+.message-bubble{
+    max-width:82%;
+    word-break:break-word;
+}
+
+.message-user{
+    background:#4f46e5;
+    color:white;
+    margin-left:auto;
+    border-radius:18px 18px 4px 18px;
+}
+
+.message-admin{
+    background:#f3f4f6;
+    color:#111827;
+    margin-right:auto;
+    border-radius:18px 18px 18px 4px;
+}
+
+.message-image{
+    max-width:180px;
+    max-height:180px;
+    object-fit:cover;
+    border-radius:12px;
+    margin-top:6px;
+}
+
+.support-btn{
+    transition:.15s;
+}
+
+.support-btn:active{
+    transform:scale(.97);
 }
 </style>
 </head>
@@ -65,18 +131,22 @@ textarea{
 <header class="bg-white border-b px-4 py-3 flex justify-between items-center sticky top-0 z-40">
 
     <div class="flex items-center gap-2">
+
         <div class="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow">
             TB
         </div>
+
         <div>
             <h1 id="shop-title"
                 class="text-lg font-bold text-indigo-700">
                 TOPUP BUZZ
             </h1>
+
             <p class="text-[10px] text-gray-500">
                 Fast & Secure Service
             </p>
         </div>
+
     </div>
 
     <div class="flex items-center gap-2">
@@ -92,6 +162,7 @@ textarea{
         </button>
 
     </div>
+
 </header>
 
 
@@ -99,27 +170,6 @@ textarea{
 <main id="main-content"
       class="p-4 min-h-[calc(100vh-120px)]">
 </main>
-
-
-<!-- SUPPORT -->
-<div id="floating-support"
-     class="fixed bottom-20 right-4 sm:absolute sm:bottom-20 sm:right-4 z-40 flex flex-col gap-2 hide">
-
-    <a id="support-wa-btn"
-       href="#"
-       target="_blank"
-       class="bg-green-500 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-2xl">
-        💬
-    </a>
-
-    <a id="support-tg-btn"
-       href="#"
-       target="_blank"
-       class="bg-sky-500 text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-2xl">
-        ✈️
-    </a>
-
-</div>
 
 
 <!-- BOTTOM NAV -->
@@ -138,10 +188,14 @@ textarea{
         💰<br>Add Money
     </button>
 
-    <button onclick="switchTab('rewards')"
-            id="nav-rewards"
-            class="text-xs text-center text-gray-500">
-        🏆<br>Rewards
+    <button onclick="switchTab('messages')"
+            id="nav-messages"
+            class="text-xs text-center text-gray-500 relative">
+        💬<br>Messages
+        <span id="message-nav-badge"
+              class="hidden absolute -top-1 right-2 bg-red-500 text-white text-[8px] rounded-full px-1.5">
+            0
+        </span>
     </button>
 
     <button onclick="switchTab('orders')"
@@ -170,33 +224,47 @@ textarea{
 const ADMIN_PASSWORD = "264891";
 
 const DEFAULT_SETTINGS = {
+
     shopName:"TOPUP BUZZ",
+
     paymentNumber:"01994835545",
+
     whatsappNumber:"8801994835545",
+
     telegramUsername:"frouptopup",
+
     notice:"কম মূল্যে দ্রুত ও সহজে TopUp এবং Social Media Service নিন।"
+
 };
 
 
 /* =========================================================
-   STORAGE HELPERS
+   STORAGE
 ========================================================= */
 
-function getStorage(key, fallback){
+function getStorage(key,fallback){
+
     try{
+
         const value = localStorage.getItem(key);
+
         return value ? JSON.parse(value) : fallback;
+
     }catch(e){
+
         return fallback;
+
     }
+
 }
 
 
 /* =========================================================
-   DEFAULT SERVICES (Updated with new services)
+   DEFAULT SERVICES
 ========================================================= */
 
 const DEFAULT_SERVICES = [
+
     {
         id:"freefire",
         name:"Free Fire UID",
@@ -206,6 +274,7 @@ const DEFAULT_SERVICES = [
         active:true,
         description:"Free Fire Diamond TopUp Service"
     },
+
     {
         id:"weekly_lite",
         name:"Weekly Lite",
@@ -215,6 +284,7 @@ const DEFAULT_SERVICES = [
         active:true,
         description:"Free Fire Weekly Lite Membership"
     },
+
     {
         id:"weekly",
         name:"Weekly Membership",
@@ -224,6 +294,7 @@ const DEFAULT_SERVICES = [
         active:true,
         description:"Free Fire Weekly Membership TopUp"
     },
+
     {
         id:"monthly",
         name:"Monthly Membership",
@@ -233,6 +304,7 @@ const DEFAULT_SERVICES = [
         active:true,
         description:"Free Fire Monthly Membership TopUp"
     },
+
     {
         id:"ff_like",
         name:"FF Like",
@@ -242,6 +314,7 @@ const DEFAULT_SERVICES = [
         active:true,
         description:"Free Fire Profile Like Boost Service"
     },
+
     {
         id:"facebook",
         name:"Facebook",
@@ -251,6 +324,7 @@ const DEFAULT_SERVICES = [
         active:true,
         description:"Facebook Like, Followers, Views ও Comments"
     },
+
     {
         id:"tiktok",
         name:"TikTok",
@@ -260,6 +334,7 @@ const DEFAULT_SERVICES = [
         active:true,
         description:"TikTok Likes, Followers ও Views"
     },
+
     {
         id:"youtube",
         name:"YouTube",
@@ -269,6 +344,7 @@ const DEFAULT_SERVICES = [
         active:true,
         description:"YouTube Views, Likes, Subscribers ও Comments"
     },
+
     {
         id:"telegram",
         name:"Telegram",
@@ -278,6 +354,7 @@ const DEFAULT_SERVICES = [
         active:true,
         description:"Telegram Members Service"
     },
+
     {
         id:"youtube_premium",
         name:"YouTube Premium",
@@ -287,6 +364,7 @@ const DEFAULT_SERVICES = [
         active:true,
         description:"YouTube Premium Service"
     },
+
     {
         id:"capcut",
         name:"CapCut Premium",
@@ -296,6 +374,7 @@ const DEFAULT_SERVICES = [
         active:true,
         description:"CapCut Premium Service"
     }
+
 ];
 
 
@@ -304,6 +383,7 @@ const DEFAULT_SERVICES = [
 ========================================================= */
 
 const DEFAULT_PRODUCTS = [
+
     {
         id:101,
         serviceId:"freefire",
@@ -315,6 +395,7 @@ const DEFAULT_PRODUCTS = [
         description:"Free Fire 25 Diamonds TopUp.",
         rules:"সঠিক Free Fire UID দিতে হবে।"
     },
+
     {
         id:102,
         serviceId:"freefire",
@@ -326,6 +407,7 @@ const DEFAULT_PRODUCTS = [
         description:"Free Fire 50 Diamonds TopUp.",
         rules:"সঠিক Free Fire UID দিতে হবে।"
     },
+
     {
         id:103,
         serviceId:"freefire",
@@ -337,6 +419,7 @@ const DEFAULT_PRODUCTS = [
         description:"Free Fire 70 Diamonds TopUp.",
         rules:"সঠিক Free Fire UID দিতে হবে।"
     },
+
     {
         id:104,
         serviceId:"freefire",
@@ -348,6 +431,7 @@ const DEFAULT_PRODUCTS = [
         description:"Free Fire 100 Diamonds TopUp.",
         rules:"সঠিক Free Fire UID দিতে হবে।"
     },
+
     {
         id:105,
         serviceId:"freefire",
@@ -359,6 +443,7 @@ const DEFAULT_PRODUCTS = [
         description:"Free Fire 120 Diamonds TopUp.",
         rules:"সঠিক Free Fire UID দিতে হবে।"
     },
+
     {
         id:106,
         serviceId:"weekly_lite",
@@ -370,6 +455,7 @@ const DEFAULT_PRODUCTS = [
         description:"Free Fire Weekly Lite 2x.",
         rules:"সঠিক Free Fire UID দিতে হবে।"
     },
+
     {
         id:107,
         serviceId:"weekly",
@@ -381,6 +467,7 @@ const DEFAULT_PRODUCTS = [
         description:"Free Fire Weekly Membership.",
         rules:"সঠিক Free Fire UID দিতে হবে।"
     },
+
     {
         id:108,
         serviceId:"monthly",
@@ -392,6 +479,7 @@ const DEFAULT_PRODUCTS = [
         description:"Free Fire Monthly Membership.",
         rules:"সঠিক Free Fire UID দিতে হবে।"
     },
+
     {
         id:109,
         serviceId:"ff_like",
@@ -403,6 +491,7 @@ const DEFAULT_PRODUCTS = [
         description:"Free Fire Profile Like Increase.",
         rules:"সঠিক Free Fire UID দিতে হবে।"
     },
+
     {
         id:201,
         serviceId:"facebook",
@@ -414,6 +503,7 @@ const DEFAULT_PRODUCTS = [
         description:"Facebook page likes and followers.",
         rules:"Public page link দিতে হবে।"
     },
+
     {
         id:202,
         serviceId:"facebook",
@@ -425,6 +515,7 @@ const DEFAULT_PRODUCTS = [
         description:"Facebook post or photo reactions.",
         rules:"Public post link দিতে হবে।"
     },
+
     {
         id:301,
         serviceId:"tiktok",
@@ -436,6 +527,7 @@ const DEFAULT_PRODUCTS = [
         description:"TikTok profile followers.",
         rules:"TikTok profile link দিতে হবে।"
     },
+
     {
         id:401,
         serviceId:"youtube",
@@ -447,6 +539,7 @@ const DEFAULT_PRODUCTS = [
         description:"YouTube video views.",
         rules:"Public YouTube video link দিতে হবে।"
     },
+
     {
         id:501,
         serviceId:"telegram",
@@ -458,6 +551,7 @@ const DEFAULT_PRODUCTS = [
         description:"Telegram channel or group members.",
         rules:"Public Telegram link দিতে হবে।"
     },
+
     {
         id:601,
         serviceId:"youtube_premium",
@@ -469,6 +563,7 @@ const DEFAULT_PRODUCTS = [
         description:"YouTube Premium 1 Month.",
         rules:"অর্ডারের আগে প্রয়োজনীয় তথ্য সঠিকভাবে দিন।"
     },
+
     {
         id:701,
         serviceId:"capcut",
@@ -480,44 +575,96 @@ const DEFAULT_PRODUCTS = [
         description:"CapCut Premium 1 Month.",
         rules:"অর্ডারের আগে প্রয়োজনীয় তথ্য সঠিকভাবে দিন।"
     }
+
 ];
 
 
 /* =========================================================
-   DATABASE OBJECT
+   DATABASE
 ========================================================= */
 
 let db = {
-    settings: getStorage("tb_settings", DEFAULT_SETTINGS),
-    services: getStorage("tb_services", DEFAULT_SERVICES),
-    products: getStorage("tb_products", DEFAULT_PRODUCTS),
-    packages: getStorage("tb_packages", []),
-    users: getStorage("tb_users", []),
-    orders: getStorage("tb_orders", []),
-    deposits: getStorage("tb_deposits", []),
-    currentUserId: null,
-    currentTab: "home",
-    authMode: "login",
-    selectedService: "freefire",
-    selectedProductId: null,
-    orderQty: 1,
-    adminLogged: false,
-    adminSection: "dashboard"
+
+    settings:getStorage(
+        "tb_settings",
+        DEFAULT_SETTINGS
+    ),
+
+    services:getStorage(
+        "tb_services",
+        DEFAULT_SERVICES
+    ),
+
+    products:getStorage(
+        "tb_products",
+        DEFAULT_PRODUCTS
+    ),
+
+    users:getStorage(
+        "tb_users",
+        []
+    ),
+
+    orders:getStorage(
+        "tb_orders",
+        []
+    ),
+
+    deposits:getStorage(
+        "tb_deposits",
+        []
+    ),
+
+    messages:getStorage(
+        "tb_messages",
+        []
+    ),
+
+    currentUserId:null,
+
+    currentTab:"home",
+
+    authMode:"login",
+
+    selectedService:"freefire",
+
+    selectedProductId:null,
+
+    orderQty:1,
+
+    adminLogged:false,
+
+    adminSection:"dashboard",
+
+    adminSelectedUser:null,
+
+    messageCategory:""
+
 };
 
 
 /* =========================================================
-   SESSION RESTORE
+   RESTORE USER
 ========================================================= */
 
 try{
-    const oldUser = localStorage.getItem("tb_current_user");
+
+    const oldUser =
+        localStorage.getItem("tb_current_user");
+
     if(oldUser){
-        const parsed = JSON.parse(oldUser);
+
+        const parsed =
+            JSON.parse(oldUser);
+
         if(parsed && parsed.id){
+
             db.currentUserId = parsed.id;
+
         }
+
     }
+
 }catch(e){}
 
 
@@ -526,20 +673,61 @@ try{
 ========================================================= */
 
 function saveData(){
-    localStorage.setItem("tb_settings", JSON.stringify(db.settings));
-    localStorage.setItem("tb_services", JSON.stringify(db.services));
-    localStorage.setItem("tb_products", JSON.stringify(db.products));
-    localStorage.setItem("tb_packages", JSON.stringify(db.packages));
-    localStorage.setItem("tb_users", JSON.stringify(db.users));
-    localStorage.setItem("tb_orders", JSON.stringify(db.orders));
-    localStorage.setItem("tb_deposits", JSON.stringify(db.deposits));
+
+    localStorage.setItem(
+        "tb_settings",
+        JSON.stringify(db.settings)
+    );
+
+    localStorage.setItem(
+        "tb_services",
+        JSON.stringify(db.services)
+    );
+
+    localStorage.setItem(
+        "tb_products",
+        JSON.stringify(db.products)
+    );
+
+    localStorage.setItem(
+        "tb_users",
+        JSON.stringify(db.users)
+    );
+
+    localStorage.setItem(
+        "tb_orders",
+        JSON.stringify(db.orders)
+    );
+
+    localStorage.setItem(
+        "tb_deposits",
+        JSON.stringify(db.deposits)
+    );
+
+    localStorage.setItem(
+        "tb_messages",
+        JSON.stringify(db.messages)
+    );
 
     const user = getCurrentUser();
+
     if(user){
-        localStorage.setItem("tb_current_user", JSON.stringify({ id: user.id }));
+
+        localStorage.setItem(
+            "tb_current_user",
+            JSON.stringify({
+                id:user.id
+            })
+        );
+
     }else{
-        localStorage.removeItem("tb_current_user");
+
+        localStorage.removeItem(
+            "tb_current_user"
+        );
+
     }
+
 }
 
 
@@ -548,7 +736,11 @@ function saveData(){
 ========================================================= */
 
 function getCurrentUser(){
-    return db.users.find(u => String(u.id) === String(db.currentUserId)) || null;
+
+    return db.users.find(
+        u => String(u.id) === String(db.currentUserId)
+    ) || null;
+
 }
 
 
@@ -557,253 +749,707 @@ function getCurrentUser(){
 ========================================================= */
 
 function switchTab(tab){
+
     db.currentTab = tab;
-    const container = document.getElementById("app-container");
-    if(container) container.scrollTo(0, 0);
+
+    const container =
+        document.getElementById("app-container");
+
+    if(container){
+
+        container.scrollTo(0,0);
+
+    }
+
     render();
+
 }
 
 
 /* =========================================================
-   RENDER ENGINE
+   RENDER
 ========================================================= */
 
 function render(){
+
     const user = getCurrentUser();
-    const main = document.getElementById("main-content");
-    const nav = document.getElementById("bottom-nav");
-    const badge = document.getElementById("user-balance-badge");
-    const support = document.getElementById("floating-support");
 
-    document.getElementById("shop-title").innerText = db.settings.shopName || "TOPUP BUZZ";
+    const main =
+        document.getElementById("main-content");
 
-    document.getElementById("support-wa-btn").href = "https://wa.me/" + cleanNumber(db.settings.whatsappNumber);
+    const nav =
+        document.getElementById("bottom-nav");
 
-    let tg = db.settings.telegramUsername || "";
-    if(tg.startsWith("http")){
-        document.getElementById("support-tg-btn").href = tg;
-    } else {
-        tg = tg.replace("@", "");
-        document.getElementById("support-tg-btn").href = "https://t.me/" + tg;
-    }
+    const badge =
+        document.getElementById("user-balance-badge");
+
+    document.getElementById("shop-title").innerText =
+        db.settings.shopName || "TOPUP BUZZ";
+
+
+    updateSupportLinks();
+
 
     if(!user && db.currentTab !== "admin"){
+
         nav.classList.add("hide");
+
         badge.classList.add("hide");
-        support.classList.add("hide");
+
         main.innerHTML = renderAuth();
+
         return;
+
     }
+
 
     if(user && db.currentTab !== "admin"){
+
         nav.classList.remove("hide");
+
         badge.classList.remove("hide");
-        support.classList.remove("hide");
-        document.getElementById("header-balance").innerText = Number(user.balance || 0).toFixed(2);
+
+        document.getElementById(
+            "header-balance"
+        ).innerText =
+            Number(user.balance || 0).toFixed(2);
+
         updateNav();
+
+        updateMessageBadge();
+
     }
 
-    if(db.currentTab === "home")
+
+    if(db.currentTab === "home"){
+
         main.innerHTML = renderHome();
-    else if(db.currentTab === "deposit")
-        main.innerHTML = renderDeposit();
-    else if(db.currentTab === "rewards")
-        main.innerHTML = renderRewards();
-    else if(db.currentTab === "orders")
-        main.innerHTML = renderOrders();
-    else if(db.currentTab === "account")
-        main.innerHTML = renderAccount();
-    else if(db.currentTab === "admin"){
-        nav.classList.add("hide");
-        badge.classList.add("hide");
-        support.classList.add("hide");
-        main.innerHTML = renderAdmin();
+
     }
+
+    else if(db.currentTab === "deposit"){
+
+        main.innerHTML = renderDeposit();
+
+    }
+
+    else if(db.currentTab === "messages"){
+
+        main.innerHTML = renderMessages();
+
+    }
+
+    else if(db.currentTab === "orders"){
+
+        main.innerHTML = renderOrders();
+
+    }
+
+    else if(db.currentTab === "account"){
+
+        main.innerHTML = renderAccount();
+
+    }
+
+    else if(db.currentTab === "admin"){
+
+        nav.classList.add("hide");
+
+        badge.classList.add("hide");
+
+        main.innerHTML = renderAdmin();
+
+    }
+
 }
 
 
 /* =========================================================
-   NAVBAR ACTIVE STATE
+   SUPPORT LINKS
+========================================================= */
+
+function updateSupportLinks(){
+
+    let tg =
+        db.settings.telegramUsername || "";
+
+    if(tg.startsWith("http")){
+
+        window.supportTelegram = tg;
+
+    }else{
+
+        tg = tg.replace("@","");
+
+        window.supportTelegram =
+            "https://t.me/" + tg;
+
+    }
+
+    window.supportWhatsapp =
+        "https://wa.me/" +
+        cleanNumber(
+            db.settings.whatsappNumber
+        );
+
+}
+
+
+/* =========================================================
+   NAV ACTIVE
 ========================================================= */
 
 function updateNav(){
-    ["home","deposit","rewards","orders","account"].forEach(t => {
-        const el = document.getElementById("nav-" + t);
+
+    [
+        "home",
+        "deposit",
+        "messages",
+        "orders",
+        "account"
+    ].forEach(t => {
+
+        const el =
+            document.getElementById(
+                "nav-" + t
+            );
+
         if(!el) return;
-        el.className = "text-xs text-center " + (db.currentTab === t ? "text-indigo-600 font-bold" : "text-gray-500");
+
+        el.className =
+            "text-xs text-center " +
+            (
+                db.currentTab === t
+                ? "text-indigo-600 font-bold"
+                : "text-gray-500"
+            );
+
     });
+
 }
 
 
 /* =========================================================
-   AUTH UI
+   MESSAGE BADGE
+========================================================= */
+
+function updateMessageBadge(){
+
+    const user = getCurrentUser();
+
+    const badge =
+        document.getElementById(
+            "message-nav-badge"
+        );
+
+    if(!badge || !user) return;
+
+    const unread =
+        db.messages.filter(
+            m =>
+                Number(m.userId) === Number(user.id)
+                &&
+                m.sender === "admin"
+                &&
+                m.readByUser !== true
+        ).length;
+
+    if(unread > 0){
+
+        badge.innerText =
+            unread > 9 ? "9+" : unread;
+
+        badge.classList.remove("hidden");
+
+    }else{
+
+        badge.classList.add("hidden");
+
+    }
+
+}
+
+
+/* =========================================================
+   AUTH
 ========================================================= */
 
 function renderAuth(){
+
     return `
+
     <div class="py-10">
+
         <div class="card p-6 shadow-sm">
+
             <div class="text-center">
+
                 <div class="w-16 h-16 bg-indigo-600 text-white rounded-2xl mx-auto flex items-center justify-center text-3xl font-bold shadow mb-3">
                     TB
                 </div>
+
                 <h2 class="text-2xl font-bold text-indigo-700">
-                    ${escapeHTML(db.settings.shopName)}
+                    ${escapeHTML(
+                        db.settings.shopName
+                    )}
                 </h2>
+
                 <p class="text-gray-500 text-sm mt-1">
-                    ${db.authMode === "login" ? "Customer Login" : "Create New Account"}
+                    ${
+                        db.authMode === "login"
+                        ? "Customer Login"
+                        : "Create New Account"
+                    }
                 </p>
+
             </div>
+
 
             <div class="mt-6 space-y-3">
-                <input type="text" id="auth-phone" placeholder="01XXXXXXXXX" class="w-full border rounded-xl p-3 text-sm">
-                <input type="password" id="auth-pass" placeholder="Password" class="w-full border rounded-xl p-3 text-sm">
-                ${db.authMode === "register" ? `<input type="password" id="auth-conf-pass" placeholder="Confirm Password" class="w-full border rounded-xl p-3 text-sm">` : ""}
 
-                <button onclick="handleAuth()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm">
-                    ${db.authMode === "login" ? "Login" : "Register"}
+                <input
+                    type="text"
+                    id="auth-phone"
+                    placeholder="01XXXXXXXXX"
+                    class="w-full border rounded-xl p-3 text-sm"
+                >
+
+                <input
+                    type="password"
+                    id="auth-pass"
+                    placeholder="Password"
+                    class="w-full border rounded-xl p-3 text-sm"
+                >
+
+                ${
+                    db.authMode === "register"
+                    ?
+                    `
+                    <input
+                        type="password"
+                        id="auth-conf-pass"
+                        placeholder="Confirm Password"
+                        class="w-full border rounded-xl p-3 text-sm"
+                    >
+                    `
+                    :
+                    ""
+                }
+
+                <button
+                    onclick="handleAuth()"
+                    class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-sm">
+                    ${
+                        db.authMode === "login"
+                        ? "Login"
+                        : "Register"
+                    }
                 </button>
 
-                <button onclick="toggleAuthMode()" class="w-full text-indigo-600 text-xs py-2">
-                    ${db.authMode === "login" ? "Create New Account" : "Already have account? Login"}
+                <button
+                    onclick="toggleAuthMode()"
+                    class="w-full text-indigo-600 text-xs py-2">
+
+                    ${
+                        db.authMode === "login"
+                        ? "Create New Account"
+                        : "Already have account? Login"
+                    }
+
                 </button>
+
             </div>
+
         </div>
-    </div>`;
+
+    </div>
+
+    `;
+
 }
+
 
 function toggleAuthMode(){
-    db.authMode = db.authMode === "login" ? "register" : "login";
+
+    db.authMode =
+        db.authMode === "login"
+        ? "register"
+        : "login";
+
     render();
+
 }
+
 
 function handleAuth(){
-    const phone = document.getElementById("auth-phone").value.trim();
-    const pass = document.getElementById("auth-pass").value.trim();
+
+    const phone =
+        document.getElementById(
+            "auth-phone"
+        ).value.trim();
+
+    const pass =
+        document.getElementById(
+            "auth-pass"
+        ).value.trim();
+
 
     if(!/^01[0-9]{9}$/.test(phone)){
-        alert("সঠিক ১১ সংখ্যার ফোন নম্বর দিন");
+
+        alert(
+            "সঠিক ১১ সংখ্যার ফোন নম্বর দিন"
+        );
+
         return;
+
     }
+
+
     if(pass.length < 6){
-        alert("Password কমপক্ষে ৬ অক্ষরের হতে হবে");
+
+        alert(
+            "Password কমপক্ষে ৬ অক্ষরের হতে হবে"
+        );
+
         return;
+
     }
+
 
     if(db.authMode === "register"){
-        const conf = document.getElementById("auth-conf-pass").value.trim();
+
+        const conf =
+            document.getElementById(
+                "auth-conf-pass"
+            ).value.trim();
+
+
         if(pass !== conf){
+
             alert("Password মিলছে না");
+
             return;
+
         }
-        if(db.users.some(u => u.phone === phone)){
-            alert("এই নম্বর দিয়ে ইতিমধ্যে অ্যাকাউন্ট রয়েছে");
+
+
+        if(
+            db.users.some(
+                u => u.phone === phone
+            )
+        ){
+
+            alert(
+                "এই নম্বর দিয়ে ইতিমধ্যে অ্যাকাউন্ট রয়েছে"
+            );
+
             return;
+
         }
+
 
         const user = {
-            id: Date.now(),
-            phone: phone,
-            password: pass,
-            balance: 0,
-            totalSpend: 0,
-            createdAt: new Date().toLocaleString()
+
+            id:Date.now(),
+
+            phone:phone,
+
+            password:pass,
+
+            balance:0,
+
+            totalSpend:0,
+
+            createdAt:new Date().toLocaleString()
+
         };
 
+
         db.users.push(user);
-        db.currentUserId = user.id;
-        db.currentTab = "home";
+
+        db.currentUserId =
+            user.id;
+
+        db.currentTab =
+            "home";
+
         saveData();
+
         render();
-    } else {
-        const user = db.users.find(u => u.phone === phone && u.password === pass);
-        if(!user){
-            alert("নম্বর অথবা পাসওয়ার্ড ভুল হয়েছে");
-            return;
-        }
-        db.currentUserId = user.id;
-        db.currentTab = "home";
-        saveData();
-        render();
+
     }
+
+    else{
+
+        const user =
+            db.users.find(
+                u =>
+                    u.phone === phone
+                    &&
+                    u.password === pass
+            );
+
+
+        if(!user){
+
+            alert(
+                "নম্বর অথবা পাসওয়ার্ড ভুল হয়েছে"
+            );
+
+            return;
+
+        }
+
+
+        db.currentUserId =
+            user.id;
+
+        db.currentTab =
+            "home";
+
+        saveData();
+
+        render();
+
+    }
+
 }
 
+
 function logout(){
+
     db.currentUserId = null;
+
     db.currentTab = "home";
+
     saveData();
+
     render();
+
 }
 
 
 /* =========================================================
-   HOME PAGE
+   HOME
 ========================================================= */
 
 function renderHome(){
-    const user = getCurrentUser();
-    if(!user) return renderAuth();
 
-    const services = db.services.filter(s => s.active !== false);
-    const selectedService = db.services.find(s => s.id === db.selectedService);
-    const products = db.products.filter(p => p.serviceId === db.selectedService && p.active !== false);
-    const selected = db.products.find(p => Number(p.id) === Number(db.selectedProductId));
-    const total = selected ? Number(selected.price) * Number(db.orderQty) : 0;
+    const user =
+        getCurrentUser();
+
+    if(!user)
+        return renderAuth();
+
+
+    const services =
+        db.services.filter(
+            s => s.active !== false
+        );
+
+
+    const selectedService =
+        db.services.find(
+            s =>
+                s.id ===
+                db.selectedService
+        );
+
+
+    const products =
+        db.products.filter(
+            p =>
+                p.serviceId ===
+                db.selectedService
+                &&
+                p.active !== false
+        );
+
+
+    const selected =
+        db.products.find(
+            p =>
+                Number(p.id) ===
+                Number(db.selectedProductId)
+        );
+
+
+    const total =
+        selected
+        ?
+        Number(selected.price) *
+        Number(db.orderQty)
+        :
+        0;
+
 
     return `
+
     <div>
-        <!-- HERO BANNER -->
+
         <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl p-4 mb-4 shadow">
-            <p class="text-[11px] opacity-80">Welcome</p>
-            <h2 class="text-lg font-bold mt-1">${escapeHTML(db.settings.shopName)}</h2>
-            <p class="text-xs mt-1 opacity-90">${escapeHTML(db.settings.notice)}</p>
+
+            <p class="text-[11px] opacity-80">
+                Welcome
+            </p>
+
+            <h2 class="text-lg font-bold mt-1">
+                ${escapeHTML(
+                    db.settings.shopName
+                )}
+            </h2>
+
+            <p class="text-xs mt-1 opacity-90">
+                ${escapeHTML(
+                    db.settings.notice
+                )}
+            </p>
+
         </div>
 
-        <!-- SERVICES GRID (Unlimited Services Support) -->
-        <h2 class="font-bold text-sm mb-2">🛍️ Services</h2>
-        <div class="grid grid-cols-4 gap-2 mb-4 max-h-[320px] overflow-y-auto no-scrollbar pr-1">
-            ${services.map(s => `
-                <button onclick="selectService('${escapeAttr(s.id)}')"
-                    class="bg-white border rounded-2xl p-2.5 text-center shadow-sm ${db.selectedService === s.id ? "border-indigo-600 ring-2 ring-indigo-100 bg-indigo-50/50" : ""}">
-                    <div class="service-icon mx-auto bg-gray-100 text-lg">
-                        ${s.image ? `<img src="${s.image}" alt="">` : (s.icon || "🛍️")}
-                    </div>
-                    <div class="font-bold text-[10px] mt-1.5 truncate">
-                        ${escapeHTML(s.name)}
-                    </div>
-                </button>
-            `).join("")}
+
+        <h2 class="font-bold text-sm mb-2">
+            🛍️ Services
+        </h2>
+
+
+        <div class="grid grid-cols-4 gap-2 mb-4">
+
+            ${
+                services.map(
+                    s => `
+
+                    <button
+                        onclick="selectService('${escapeAttr(s.id)}')"
+                        class="bg-white border rounded-2xl p-2.5 text-center shadow-sm ${
+                            db.selectedService === s.id
+                            ?
+                            "border-indigo-600 ring-2 ring-indigo-100 bg-indigo-50/50"
+                            :
+                            ""
+                        }">
+
+                        <div class="service-icon mx-auto bg-gray-100">
+
+                            ${
+                                s.image
+                                ?
+                                `<img src="${s.image}" alt="">`
+                                :
+                                (s.icon || "🛍️")
+                            }
+
+                        </div>
+
+                        <div class="font-bold text-[10px] mt-1.5 truncate">
+                            ${escapeHTML(s.name)}
+                        </div>
+
+                    </button>
+
+                    `
+                ).join("")
+            }
+
         </div>
 
-        <!-- SERVICE DESCRIPTION -->
-        ${selectedService ? `
+
+        ${
+            selectedService
+            ?
+            `
             <div class="bg-indigo-50 rounded-xl p-3 mb-4 border border-indigo-100">
-                <div class="font-bold text-xs text-indigo-900">${escapeHTML(selectedService.name)}</div>
-                <div class="text-[10px] text-gray-600 mt-1">${escapeHTML(selectedService.description || "")}</div>
-            </div>
-        ` : ""}
 
-        <!-- PRODUCTS GRID -->
-        <h2 class="font-bold text-sm mb-2">📦 Products</h2>
-        ${products.length === 0 ? `
+                <div class="font-bold text-xs text-indigo-900">
+                    ${escapeHTML(
+                        selectedService.name
+                    )}
+                </div>
+
+                <div class="text-[10px] text-gray-600 mt-1">
+                    ${escapeHTML(
+                        selectedService.description || ""
+                    )}
+                </div>
+
+            </div>
+            `
+            :
+            ""
+        }
+
+
+        <h2 class="font-bold text-sm mb-2">
+            📦 Products
+        </h2>
+
+
+        ${
+            products.length === 0
+            ?
+            `
             <div class="card text-center py-10 text-gray-400 text-xs">
                 এই Service-এ এখনো কোনো Product নেই।
             </div>
-        ` : `
+            `
+            :
+            `
             <div class="grid grid-cols-2 gap-2.5">
-                ${products.map(p => `
-                    <button onclick="selectProduct(${Number(p.id)})"
-                        class="package-card text-left bg-white border rounded-xl p-3 shadow-sm ${Number(db.selectedProductId) === Number(p.id) ? "border-indigo-600 ring-2 ring-indigo-100 bg-indigo-50" : ""}">
-                        <div class="font-bold text-xs text-gray-800 line-clamp-1">${escapeHTML(p.name)}</div>
-                        <div class="text-indigo-600 font-bold text-sm mt-2">৳ ${Number(p.price).toFixed(2)}</div>
-                        <div class="text-[9px] text-gray-400 mt-1">Tap for details</div>
-                    </button>
-                `).join("")}
-            </div>
-        `}
 
-        ${selected ? renderOrderBox(selected, total) : ""}
-    </div>`;
+                ${
+                    products.map(
+                        p => `
+
+                        <button
+                            onclick="selectProduct(${Number(p.id)})"
+                            class="package-card text-left bg-white border rounded-xl p-3 shadow-sm ${
+                                Number(db.selectedProductId) === Number(p.id)
+                                ?
+                                "border-indigo-600 ring-2 ring-indigo-100 bg-indigo-50"
+                                :
+                                ""
+                            }">
+
+                            <div class="font-bold text-xs text-gray-800">
+                                ${escapeHTML(
+                                    p.name
+                                )}
+                            </div>
+
+                            <div class="text-indigo-600 font-bold text-sm mt-2">
+                                ৳ ${Number(p.price).toFixed(2)}
+                            </div>
+
+                            <div class="text-[9px] text-gray-400 mt-1">
+                                Tap for details
+                            </div>
+
+                        </button>
+
+                        `
+                    ).join("")
+                }
+
+            </div>
+            `
+        }
+
+
+        ${
+            selected
+            ?
+            renderOrderBox(
+                selected,
+                total
+            )
+            :
+            ""
+        }
+
+    </div>
+
+    `;
+
 }
 
 
@@ -811,851 +1457,4438 @@ function renderHome(){
    ORDER BOX
 ========================================================= */
 
-function renderOrderBox(product, total){
-    const inputLabel = product.inputType === "uid" ? "Free Fire UID" : product.inputType === "link" ? "Link" : "প্রয়োজনীয় তথ্য";
-    const placeholder = product.inputType === "uid" ? "Free Fire UID লিখুন" : product.inputType === "link" ? "https://..." : "তথ্য লিখুন";
+function renderOrderBox(product,total){
+
+    const inputLabel =
+        product.inputType === "uid"
+        ?
+        "Free Fire UID"
+        :
+        product.inputType === "link"
+        ?
+        "Link"
+        :
+        "প্রয়োজনীয় তথ্য";
+
+
+    const placeholder =
+        product.inputType === "uid"
+        ?
+        "Free Fire UID লিখুন"
+        :
+        product.inputType === "link"
+        ?
+        "https://..."
+        :
+        "তথ্য লিখুন";
+
 
     return `
+
     <div class="card p-4 mt-5 shadow-sm border-2 border-indigo-200">
+
         <div class="flex justify-between items-start mb-3">
+
             <div>
-                <h3 class="font-bold text-sm">${escapeHTML(product.name)}</h3>
-                <p class="text-[10px] text-gray-500 mt-1">প্রতি প্যাক ৳${Number(product.price).toFixed(2)}</p>
+
+                <h3 class="font-bold text-sm">
+                    ${escapeHTML(
+                        product.name
+                    )}
+                </h3>
+
+                <p class="text-[10px] text-gray-500 mt-1">
+                    প্রতি প্যাক ৳${Number(product.price).toFixed(2)}
+                </p>
+
             </div>
-            <button onclick="clearProduct()" class="text-gray-400 text-xs font-bold px-2 py-1 bg-gray-100 rounded-full">✕</button>
+
+            <button
+                onclick="clearProduct()"
+                class="text-gray-400 text-xs font-bold px-2 py-1 bg-gray-100 rounded-full">
+                ✕
+            </button>
+
         </div>
+
 
         <div class="bg-gray-50 rounded-xl p-3 mb-3">
-            <div class="text-[10px] font-bold text-gray-600">📝 Description</div>
-            <div class="text-[10px] text-gray-600 mt-1">${escapeHTML(product.description || "কোনো বিবরণ দেওয়া হয়নি।")}</div>
+
+            <div class="text-[10px] font-bold text-gray-600">
+                📝 Description
+            </div>
+
+            <div class="text-[10px] text-gray-600 mt-1">
+                ${escapeHTML(
+                    product.description ||
+                    "কোনো বিবরণ দেওয়া হয়নি।"
+                )}
+            </div>
+
         </div>
+
 
         <div class="bg-yellow-50 rounded-xl p-3 mb-3">
-            <div class="text-[10px] font-bold text-yellow-700">📌 Rules / Instructions</div>
-            <div class="text-[10px] text-gray-600 mt-1 whitespace-pre-line">${escapeHTML(product.rules || "কোনো নিয়ম দেওয়া হয়নি।")}</div>
+
+            <div class="text-[10px] font-bold text-yellow-700">
+                📌 Rules / Instructions
+            </div>
+
+            <div class="text-[10px] text-gray-600 mt-1 whitespace-pre-line">
+                ${escapeHTML(
+                    product.rules ||
+                    "কোনো নিয়ম দেওয়া হয়নি।"
+                )}
+            </div>
+
         </div>
 
-        <label class="text-[11px] font-bold text-gray-600">Quantity</label>
-        <select id="order-qty" onchange="changeQty(this.value)" class="w-full border rounded-xl p-2.5 text-xs mt-1 mb-3 bg-white">
-            ${Array.from({length:100},(_,i)=>i+1).map(n=>`<option value="${n}" ${db.orderQty===n?"selected":""}>${n} টি</option>`).join("")}
+
+        <label class="text-[11px] font-bold text-gray-600">
+            Quantity
+        </label>
+
+        <select
+            id="order-qty"
+            onchange="changeQty(this.value)"
+            class="w-full border rounded-xl p-2.5 text-xs mt-1 mb-3 bg-white">
+
+            ${
+                Array.from(
+                    {length:100},
+                    (_,i)=>i+1
+                ).map(
+                    n =>
+                    `<option value="${n}" ${
+                        db.orderQty===n
+                        ?
+                        "selected"
+                        :
+                        ""
+                    }>${n} টি</option>`
+                ).join("")
+            }
+
         </select>
 
-        <label class="text-[11px] font-bold text-gray-600">${inputLabel}</label>
-        <input type="text" id="order-target" placeholder="${placeholder}" class="w-full border rounded-xl p-2.5 text-xs mt-1 mb-3">
+
+        <label class="text-[11px] font-bold text-gray-600">
+            ${inputLabel}
+        </label>
+
+        <input
+            type="text"
+            id="order-target"
+            placeholder="${placeholder}"
+            class="w-full border rounded-xl p-2.5 text-xs mt-1 mb-3">
+
 
         <div class="bg-indigo-50 p-3 rounded-xl flex justify-between items-center mb-3">
-            <span class="text-xs font-bold">মোট খরচ</span>
-            <span id="order-total" class="text-indigo-700 font-bold text-sm">৳ ${Number(total).toFixed(2)}</span>
+
+            <span class="text-xs font-bold">
+                মোট খরচ
+            </span>
+
+            <span
+                id="order-total"
+                class="text-indigo-700 font-bold text-sm">
+                ৳ ${Number(total).toFixed(2)}
+            </span>
+
         </div>
 
-        <button onclick="submitOrder()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs shadow">
+
+        <button
+            onclick="submitOrder()"
+            class="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs shadow">
             Confirm Order 🚀
         </button>
-    </div>`;
+
+    </div>
+
+    `;
+
 }
+
 
 function selectService(id){
+
     db.selectedService = id;
+
     db.selectedProductId = null;
+
     db.orderQty = 1;
+
     render();
+
 }
+
 
 function selectProduct(id){
+
     db.selectedProductId = id;
+
     db.orderQty = 1;
+
     render();
+
 }
+
 
 function clearProduct(){
+
     db.selectedProductId = null;
+
     db.orderQty = 1;
+
     render();
+
 }
+
 
 function changeQty(value){
-    db.orderQty = Math.max(1, Number(value) || 1);
-    const product = db.products.find(p => Number(p.id) === Number(db.selectedProductId));
+
+    db.orderQty =
+        Math.max(
+            1,
+            Number(value) || 1
+        );
+
+
+    const product =
+        db.products.find(
+            p =>
+                Number(p.id) ===
+                Number(db.selectedProductId)
+        );
+
+
     if(product){
-        const total = Number(product.price) * db.orderQty;
-        const el = document.getElementById("order-total");
-        if(el) el.innerText = "৳ " + total.toFixed(2);
-    }
-}
 
-function submitOrder(){
-    const user = getCurrentUser();
-    if(!user){
-        alert("প্রথমে Login করুন");
-        return;
-    }
-    const product = db.products.find(p => Number(p.id) === Number(db.selectedProductId));
-    if(!product){
-        alert("Product নির্বাচন করুন");
-        return;
-    }
-    const target = document.getElementById("order-target").value.trim();
-    if(!target){
-        alert("প্রয়োজনীয় তথ্য দিন");
-        return;
-    }
+        const total =
+            Number(product.price) *
+            db.orderQty;
 
-    const quantity = Number(db.orderQty) || 1;
-    const total = Number(product.price) * quantity;
 
-    if(Number(user.balance) < total){
-        alert("আপনার পর্যাপ্ত Balance নেই।");
-        switchTab("deposit");
-        return;
+        const el =
+            document.getElementById(
+                "order-total"
+            );
+
+
+        if(el){
+
+            el.innerText =
+                "৳ " +
+                total.toFixed(2);
+
+        }
+
     }
 
-    user.balance = Number(user.balance) - total;
-    user.totalSpend = Number(user.totalSpend || 0) + total;
-
-    const order = {
-        id: Date.now(),
-        userId: user.id,
-        userPhone: user.phone,
-        serviceName: getServiceName(product.serviceId),
-        productName: product.name,
-        quantity: quantity,
-        total: total,
-        target: target,
-        uid: product.inputType === "uid" ? target : "",
-        link: product.inputType === "link" ? target : "",
-        status: "Pending",
-        date: new Date().toLocaleString()
-    };
-
-    db.orders.unshift(order);
-    db.selectedProductId = null;
-    db.orderQty = 1;
-    saveData();
-    alert("অর্ডার সফলভাবে সাবমিট হয়েছে!");
-    render();
 }
 
 
 /* =========================================================
-   ADD MONEY / DEPOSIT
+   SUBMIT ORDER
+========================================================= */
+
+function submitOrder(){
+
+    const user =
+        getCurrentUser();
+
+
+    if(!user){
+
+        alert(
+            "প্রথমে Login করুন"
+        );
+
+        return;
+
+    }
+
+
+    const product =
+        db.products.find(
+            p =>
+                Number(p.id) ===
+                Number(db.selectedProductId)
+        );
+
+
+    if(!product){
+
+        alert(
+            "Product নির্বাচন করুন"
+        );
+
+        return;
+
+    }
+
+
+    const target =
+        document.getElementById(
+            "order-target"
+        ).value.trim();
+
+
+    if(!target){
+
+        alert(
+            "প্রয়োজনীয় তথ্য দিন"
+        );
+
+        return;
+
+    }
+
+
+    const quantity =
+        Number(db.orderQty) || 1;
+
+
+    const total =
+        Number(product.price) *
+        quantity;
+
+
+    if(
+        Number(user.balance) <
+        total
+    ){
+
+        alert(
+            "আপনার পর্যাপ্ত Balance নেই।"
+        );
+
+        switchTab("deposit");
+
+        return;
+
+    }
+
+
+    user.balance =
+        Number(user.balance) -
+        total;
+
+
+    user.totalSpend =
+        Number(user.totalSpend || 0) +
+        total;
+
+
+    const order = {
+
+        id:Date.now(),
+
+        userId:user.id,
+
+        userPhone:user.phone,
+
+        serviceName:
+            getServiceName(
+                product.serviceId
+            ),
+
+        productName:
+            product.name,
+
+        quantity:quantity,
+
+        total:total,
+
+        target:target,
+
+        uid:
+            product.inputType === "uid"
+            ?
+            target
+            :
+            "",
+
+        link:
+            product.inputType === "link"
+            ?
+            target
+            :
+            "",
+
+        status:"Pending",
+
+        date:
+            new Date().toLocaleString()
+
+    };
+
+
+    db.orders.unshift(order);
+
+    db.selectedProductId = null;
+
+    db.orderQty = 1;
+
+    saveData();
+
+    alert(
+        "অর্ডার সফলভাবে সাবমিট হয়েছে!"
+    );
+
+    render();
+
+}
+
+
+/* =========================================================
+   DEPOSIT
 ========================================================= */
 
 function renderDeposit(){
-    const user = getCurrentUser();
-    const myDeposits = db.deposits.filter(d => d.userId === user.id);
+
+    const user =
+        getCurrentUser();
+
+
+    const myDeposits =
+        db.deposits.filter(
+            d =>
+                Number(d.userId) ===
+                Number(user.id)
+        );
+
 
     return `
+
     <div>
-        <h2 class="text-base font-bold mb-3">💰 Balance Deposit (Add Money)</h2>
+
+        <h2 class="text-base font-bold mb-3">
+            💰 Balance Deposit
+        </h2>
+
 
         <div class="card p-4 shadow-sm space-y-3">
-            <div>
-                <label class="text-[11px] font-bold text-gray-600">টাকার পরিমাণ</label>
-                <input type="number" id="dep-amount" min="1" placeholder="যেমন: 500" class="w-full border rounded-xl p-2.5 text-xs mt-1">
-            </div>
 
             <div>
-                <label class="text-[11px] font-bold text-gray-600">Payment Method</label>
-                <select id="dep-method" class="w-full border rounded-xl p-2.5 text-xs mt-1 bg-white">
-                    <option value="bKash Personal">bKash Personal</option>
-                    <option value="Nagad Personal">Nagad Personal</option>
-                </select>
+
+                <label class="text-[11px] font-bold text-gray-600">
+                    টাকার পরিমাণ
+                </label>
+
+                <input
+                    type="number"
+                    id="dep-amount"
+                    min="1"
+                    placeholder="যেমন: 500"
+                    class="w-full border rounded-xl p-2.5 text-xs mt-1">
+
             </div>
+
+
+            <div>
+
+                <label class="text-[11px] font-bold text-gray-600">
+                    Payment Method
+                </label>
+
+                <select
+                    id="dep-method"
+                    class="w-full border rounded-xl p-2.5 text-xs mt-1 bg-white">
+
+                    <option value="bKash Personal">
+                        bKash Personal
+                    </option>
+
+                    <option value="Nagad Personal">
+                        Nagad Personal
+                    </option>
+
+                </select>
+
+            </div>
+
 
             <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
-                <p class="text-[10px] text-gray-500">টাকা পাঠানোর নম্বর:</p>
-                <p class="text-sm font-bold text-indigo-700">${escapeHTML(db.settings.paymentNumber)}</p>
+
+                <p class="text-[10px] text-gray-500">
+                    টাকা পাঠানোর নম্বর:
+                </p>
+
+                <p class="text-sm font-bold text-indigo-700">
+                    ${escapeHTML(
+                        db.settings.paymentNumber
+                    )}
+                </p>
+
             </div>
+
 
             <div>
-                <label class="text-[11px] font-bold text-gray-600">প্রেরক নম্বর</label>
-                <input type="text" id="dep-sender" placeholder="01XXXXXXXXX" class="w-full border rounded-xl p-2.5 text-xs mt-1">
+
+                <label class="text-[11px] font-bold text-gray-600">
+                    প্রেরক নম্বর
+                </label>
+
+                <input
+                    type="text"
+                    id="dep-sender"
+                    placeholder="01XXXXXXXXX"
+                    class="w-full border rounded-xl p-2.5 text-xs mt-1">
+
             </div>
+
 
             <div>
-                <label class="text-[11px] font-bold text-gray-600">Transaction ID</label>
-                <input type="text" id="dep-trx" placeholder="TrxID" class="w-full border rounded-xl p-2.5 text-xs mt-1">
+
+                <label class="text-[11px] font-bold text-gray-600">
+                    Transaction ID
+                </label>
+
+                <input
+                    type="text"
+                    id="dep-trx"
+                    placeholder="TrxID"
+                    class="w-full border rounded-xl p-2.5 text-xs mt-1">
+
             </div>
 
-            <button onclick="submitDeposit()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs shadow">
+
+            <button
+                onclick="submitDeposit()"
+                class="w-full bg-green-600 text-white font-bold py-3 rounded-xl text-xs shadow">
                 Deposit Submit
             </button>
+
         </div>
 
-        <h3 class="font-bold text-sm mt-5 mb-2">Deposit History</h3>
+
+        <h3 class="font-bold text-sm mt-5 mb-2">
+            Deposit History
+        </h3>
+
+
         <div class="space-y-2">
-            ${myDeposits.length === 0 ? `
-                <div class="text-center text-gray-400 text-xs py-8">কোনো Deposit নেই।</div>
-            ` : myDeposits.map(d => `
-                <div class="card p-3 text-xs">
-                    <div class="flex justify-between font-bold">
-                        <span>${escapeHTML(d.method)}</span>
-                        <span class="text-indigo-600">৳${Number(d.amount).toFixed(2)}</span>
-                    </div>
-                    <div class="text-[10px] text-gray-500 mt-1">TrxID: ${escapeHTML(d.trxId)}</div>
-                    <div class="text-[10px] text-gray-400">${escapeHTML(d.date)}</div>
-                    <div class="mt-2">
-                        <span class="px-2 py-1 rounded text-[10px] ${d.status==="Approved"?"bg-green-100 text-green-700":d.status==="Cancelled"?"bg-red-100 text-red-700":"bg-yellow-100 text-yellow-700"}">
-                            ${escapeHTML(d.status)}
-                        </span>
-                    </div>
+
+            ${
+                myDeposits.length === 0
+                ?
+                `
+                <div class="text-center text-gray-400 text-xs py-8">
+                    কোনো Deposit নেই।
                 </div>
-            `).join("")}
+                `
+                :
+                myDeposits.map(
+                    d => `
+
+                    <div class="card p-3 text-xs">
+
+                        <div class="flex justify-between font-bold">
+
+                            <span>
+                                ${escapeHTML(d.method)}
+                            </span>
+
+                            <span class="text-indigo-600">
+                                ৳${Number(d.amount).toFixed(2)}
+                            </span>
+
+                        </div>
+
+                        <div class="text-[10px] text-gray-500 mt-1">
+                            TrxID:
+                            ${escapeHTML(d.trxId)}
+                        </div>
+
+                        <div class="text-[10px] text-gray-400">
+                            ${escapeHTML(d.date)}
+                        </div>
+
+                        <div class="mt-2">
+
+                            <span class="px-2 py-1 rounded text-[10px] ${
+                                d.status === "Approved"
+                                ?
+                                "bg-green-100 text-green-700"
+                                :
+                                d.status === "Cancelled"
+                                ?
+                                "bg-red-100 text-red-700"
+                                :
+                                "bg-yellow-100 text-yellow-700"
+                            }">
+
+                                ${escapeHTML(
+                                    d.status
+                                )}
+
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    `
+                ).join("")
+            }
+
         </div>
-    </div>`;
+
+    </div>
+
+    `;
+
 }
+
 
 function submitDeposit(){
-    const amount = Number(document.getElementById("dep-amount").value);
-    const method = document.getElementById("dep-method").value;
-    const sender = document.getElementById("dep-sender").value.trim();
-    const trx = document.getElementById("dep-trx").value.trim();
+
+    const amount =
+        Number(
+            document.getElementById(
+                "dep-amount"
+            ).value
+        );
+
+
+    const method =
+        document.getElementById(
+            "dep-method"
+        ).value;
+
+
+    const sender =
+        document.getElementById(
+            "dep-sender"
+        ).value.trim();
+
+
+    const trx =
+        document.getElementById(
+            "dep-trx"
+        ).value.trim();
+
 
     if(!amount || amount < 1){
-        alert("কমপক্ষে ৳1 Deposit করতে হবে");
+
+        alert(
+            "কমপক্ষে ৳1 Deposit করতে হবে"
+        );
+
         return;
-    }
-    if(!/^01[0-9]{9}$/.test(sender)){
-        alert("সঠিক Sender Number দিন");
-        return;
-    }
-    if(!trx){
-        alert("TrxID দিন");
-        return;
+
     }
 
-    const user = getCurrentUser();
+
+    if(!/^01[0-9]{9}$/.test(sender)){
+
+        alert(
+            "সঠিক Sender Number দিন"
+        );
+
+        return;
+
+    }
+
+
+    if(!trx){
+
+        alert("TrxID দিন");
+
+        return;
+
+    }
+
+
+    const user =
+        getCurrentUser();
+
+
     const deposit = {
-        id: Date.now(),
-        userId: user.id,
-        userPhone: user.phone,
-        amount: amount,
-        method: method,
-        senderNumber: sender,
-        trxId: trx,
-        status: "Pending",
-        date: new Date().toLocaleString()
+
+        id:Date.now(),
+
+        userId:user.id,
+
+        userPhone:user.phone,
+
+        amount:amount,
+
+        method:method,
+
+        senderNumber:sender,
+
+        trxId:trx,
+
+        status:"Pending",
+
+        date:new Date().toLocaleString()
+
     };
 
-    db.deposits.unshift(deposit);
+
+    db.deposits.unshift(
+        deposit
+    );
+
     saveData();
 
-    const msg = "NEW DEPOSIT\nUser: " + user.phone + "\nAmount: ৳" + amount + "\nMethod: " + method + "\nSender: " + sender + "\nTrxID: " + trx;
-    window.open("https://wa.me/" + cleanNumber(db.settings.whatsappNumber) + "?text=" + encodeURIComponent(msg), "_blank");
 
-    alert("Deposit Request সফলভাবে জমা হয়েছে।");
+    alert(
+        "Deposit Request সফলভাবে জমা হয়েছে।"
+    );
+
     switchTab("deposit");
+
 }
 
 
 /* =========================================================
-   REWARDS & RANKS
+   MESSAGE SYSTEM
 ========================================================= */
 
-function renderRewards(){
-    const user = getCurrentUser();
-    const spend = Number(user.totalSpend || 0);
+const MESSAGE_CATEGORIES = [
 
-    const ranks = [
-        { name: "Bronze", req: 100, gift: "25 Diamonds" },
-        { name: "Silver", req: 1000, gift: "50 Diamonds" },
-        { name: "Gold", req: 5000, gift: "100 Diamonds" },
-        { name: "Platinum", req: 10000, gift: "Weekly Lite (2x)" },
-        { name: "Diamond", req: 25000, gift: "Weekly Membership" },
-        { name: "Heroic", req: 50000, gift: "120 Diamonds" },
-        { name: "Master", req: 100000, gift: "Monthly Membership" },
-        { name: "Grand Master", req: 200000, gift: "Special VIP Reward" }
-    ];
+    {
+        id:"account",
+        title:"Account Problem",
+        icon:"👤",
+        desc:"Login / Registration সমস্যা"
+    },
 
-    let currentRankIndex = 0;
-    ranks.forEach((r, idx) => {
-        if(spend >= r.req) currentRankIndex = idx;
-    });
-    const currentRank = ranks[currentRankIndex];
-    const nextRank = ranks[currentRankIndex + 1];
-    
-    let progress = 100;
-    if(nextRank){
-        const prevReq = currentRank.req;
-        progress = Math.min(100, Math.max(0, ((spend - prevReq) / (nextRank.req - prevReq)) * 100));
+    {
+        id:"deposit",
+        title:"Deposit Problem",
+        icon:"💰",
+        desc:"Balance Add / Payment সমস্যা"
+    },
+
+    {
+        id:"order",
+        title:"Order Problem",
+        icon:"📦",
+        desc:"Order সংক্রান্ত সমস্যা"
+    },
+
+    {
+        id:"service",
+        title:"Service Problem",
+        icon:"🛍️",
+        desc:"Service / Product সমস্যা"
+    },
+
+    {
+        id:"other",
+        title:"Other Problem",
+        icon:"❓",
+        desc:"অন্য কোনো সমস্যা"
     }
 
-    return `
-    <div>
-        <h2 class="text-base font-bold mb-3">🏆 Rewards & Ranks</h2>
+];
 
-        <div class="bg-gradient-to-r from-indigo-600 to-purple-700 text-white rounded-2xl p-4 mb-4 shadow">
-            <div class="text-xs opacity-80">CURRENT RANK</div>
-            <div class="text-xl font-bold mt-1">${currentRank.name}</div>
-            <div class="text-xs mt-1 opacity-90">Total Spend: ৳${spend.toFixed(2)}</div>
-            ${nextRank ? `
-                <div class="mt-3 bg-white/20 rounded-full h-2 overflow-hidden">
-                    <div class="bg-yellow-400 h-full rounded-full" style="width: ${progress}%"></div>
-                </div>
-                <div class="text-[10px] mt-1.5 opacity-80">Need ৳${(nextRank.req - spend).toFixed(0)} more to unlock ${nextRank.name}</div>
-            ` : `<div class="text-[10px] mt-2 text-yellow-300 font-bold">Max Rank Achieved! 🎉</div>`}
-        </div>
 
-        <div class="space-y-3">
-            ${ranks.map(r => {
-                const unlocked = spend >= r.req;
-                return `
-                <div class="card p-4 flex justify-between items-center">
-                    <div>
-                        <h3 class="font-bold text-xs">${r.name}</h3>
-                        <p class="text-[10px] text-gray-500">Requirement: ৳${r.req}</p>
-                        <p class="text-[10px] text-indigo-600 font-bold mt-1">🎁 Gift: ${r.gift}</p>
-                    </div>
-                    <span class="text-[10px] font-bold px-3 py-1 rounded-full ${unlocked ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}">
-                        ${unlocked ? "Unlocked" : "Locked"}
-                    </span>
-                </div>`;
-            }).join("")}
-        </div>
-    </div>`;
+function renderMessages(){
+
+    const user =
+        getCurrentUser();
+
+
+    if(!user)
+        return renderAuth();
+
+
+    const messages =
+        db.messages.filter(
+            m =>
+                Number(m.userId) ===
+                Number(user.id)
+        );
+
+
+    const unread =
+        messages.filter(
+            m =>
+                m.sender === "admin"
+                &&
+                m.readByUser !== true
+        );
+
+
+    unread.forEach(
+        m =>
+            m.readByUser = true
+    );
+
+
+    saveData();
+
+
+    if(!db.messageCategory){
+
+        return renderMessageCategories();
+
+    }
+
+
+    return renderChat();
+
 }
 
 
 /* =========================================================
-   MY ORDERS
+   MESSAGE CATEGORY
 ========================================================= */
 
-function renderOrders(){
-    const user = getCurrentUser();
-    const orders = db.orders.filter(o => o.userId === user.id);
+function renderMessageCategories(){
 
     return `
+
     <div>
-        <h2 class="text-base font-bold mb-3">📦 My Orders</h2>
-        ${orders.length === 0 ? `
-            <div class="text-center text-gray-400 text-xs py-10">কোনো Order পাওয়া যায়নি।</div>
-        ` : `
-            <div class="space-y-2.5">
-                ${orders.map(o => `
-                    <div class="card p-3 shadow-sm text-xs">
-                        <div class="flex justify-between font-bold">
-                            <span>${escapeHTML(o.productName || "Product")}</span>
-                            <span class="text-indigo-600">৳${Number(o.total).toFixed(2)}</span>
-                        </div>
-                        <div class="text-gray-500 text-[10px] mt-1">Service: ${escapeHTML(o.serviceName || "")}</div>
-                        <div class="text-gray-500 text-[10px]">Quantity: ${Number(o.quantity || 1)}</div>
-                        ${o.uid ? `<div class="text-gray-500 text-[10px]">UID: ${escapeHTML(o.uid)}</div>` : ""}
-                        ${o.link ? `<div class="text-gray-500 text-[10px] break-all">Link: ${escapeHTML(o.link)}</div>` : ""}
-                        <div class="text-gray-400 text-[10px] mt-1">${escapeHTML(o.date)}</div>
-                        <div class="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold ${o.status==="Complete"?"bg-green-100 text-green-700":o.status==="Cancelled"?"bg-red-100 text-red-700":"bg-yellow-100 text-yellow-700"}">
-                            ${escapeHTML(o.status)}
-                        </div>
-                    </div>
-                `).join("")}
+
+        <div class="card p-4 mb-4 shadow-sm">
+
+            <div class="text-center">
+
+                <div class="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-2xl mx-auto flex items-center justify-center text-3xl">
+                    💬
+                </div>
+
+                <h2 class="font-bold text-lg mt-3">
+                    My Live Message
+                </h2>
+
+                <p class="text-[11px] text-gray-500 mt-1">
+                    আপনার সমস্যার ধরন নির্বাচন করুন
+                </p>
+
             </div>
-        `}
-    </div>`;
+
+        </div>
+
+
+        <div class="space-y-2">
+
+            ${
+                MESSAGE_CATEGORIES.map(
+                    c => `
+
+                    <button
+                        onclick="startMessage('${c.id}')"
+                        class="w-full card p-4 flex items-center gap-3 text-left shadow-sm">
+
+                        <div class="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-2xl">
+                            ${c.icon}
+                        </div>
+
+                        <div class="flex-1">
+
+                            <div class="font-bold text-sm">
+                                ${c.title}
+                            </div>
+
+                            <div class="text-[10px] text-gray-500 mt-1">
+                                ${c.desc}
+                            </div>
+
+                        </div>
+
+                        <div class="text-gray-400">
+                            ›
+                        </div>
+
+                    </button>
+
+                    `
+                ).join("")
+            }
+
+        </div>
+
+
+        <div class="bg-yellow-50 border border-yellow-100 rounded-xl p-3 mt-4">
+
+            <div class="text-[10px] text-yellow-800">
+                💡 সমস্যা বিস্তারিতভাবে লিখুন। প্রয়োজন হলে Screenshot / Photo পাঠাতে পারবেন।
+            </div>
+
+        </div>
+
+    </div>
+
+    `;
+
+}
+
+
+function startMessage(category){
+
+    db.messageCategory =
+        category;
+
+    render();
+
 }
 
 
 /* =========================================================
-   MY ACCOUNT PAGE
+   CHAT
+========================================================= */
+
+function renderChat(){
+
+    const user =
+        getCurrentUser();
+
+
+    const category =
+        MESSAGE_CATEGORIES.find(
+            c =>
+                c.id ===
+                db.messageCategory
+        );
+
+
+    const messages =
+        db.messages.filter(
+            m =>
+                Number(m.userId) ===
+                Number(user.id)
+                &&
+                m.category ===
+                db.messageCategory
+        );
+
+
+    return `
+
+    <div>
+
+        <div class="bg-indigo-600 text-white rounded-2xl p-4 mb-3 shadow">
+
+            <div class="flex items-center gap-3">
+
+                <div class="w-11 h-11 bg-white/20 rounded-full flex items-center justify-center text-2xl">
+                    💬
+                </div>
+
+                <div class="flex-1">
+
+                    <div class="font-bold text-sm">
+                        My Live Message
+                    </div>
+
+                    <div class="text-[10px] opacity-80">
+                        ${category ? category.title : "Support"}
+                    </div>
+
+                </div>
+
+                <button
+                    onclick="closeMessageCategory()"
+                    class="bg-white/20 px-2 py-1 rounded-lg text-xs">
+                    Back
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="chat-box"
+            class="chat-box bg-white rounded-2xl p-3 border">
+
+            ${
+                messages.length === 0
+                ?
+                `
+                <div class="text-center py-16">
+
+                    <div class="text-4xl">
+                        💬
+                    </div>
+
+                    <div class="font-bold text-sm mt-2">
+                        Support Center
+                    </div>
+
+                    <div class="text-[10px] text-gray-500 mt-1">
+                        আপনার সমস্যাটি নিচে লিখে পাঠান।
+                    </div>
+
+                </div>
+                `
+                :
+                messages.map(
+                    m => renderMessageBubble(m)
+                ).join("")
+            }
+
+        </div>
+
+
+        <div class="bg-white border rounded-2xl p-2 mt-2 shadow-sm">
+
+            <div id="selected-photo-preview"
+                 class="hidden px-2 pt-1 pb-2">
+
+                <div class="relative inline-block">
+
+                    <img
+                        id="photo-preview-image"
+                        class="w-20 h-20 object-cover rounded-xl border">
+
+                    <button
+                        onclick="removeSelectedPhoto()"
+                        class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full text-[10px]">
+                        ✕
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="flex items-end gap-2">
+
+                <label
+                    class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl cursor-pointer">
+
+                    📷
+
+                    <input
+                        type="file"
+                        id="message-photo"
+                        accept="image/*"
+                        class="hidden"
+                        onchange="previewMessagePhoto(this)">
+
+                </label>
+
+
+                <textarea
+                    id="message-input"
+                    rows="1"
+                    placeholder="Type a message..."
+                    class="flex-1 border rounded-2xl px-4 py-2.5 text-xs outline-none"
+                    oninput="autoResizeMessage(this)"></textarea>
+
+
+                <button
+                    onclick="sendMessage()"
+                    class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center text-lg">
+                    ➤
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    `;
+
+}
+
+
+function renderMessageBubble(m){
+
+    const isUser =
+        m.sender === "user";
+
+
+    return `
+
+    <div class="flex ${
+        isUser
+        ?
+        "justify-end"
+        :
+        "justify-start"
+    } mb-3">
+
+        <div class="message-bubble ${
+            isUser
+            ?
+            "message-user"
+            :
+            "message-admin"
+        } px-3 py-2">
+
+            ${
+                m.image
+                ?
+                `
+                <img
+                    src="${m.image}"
+                    class="message-image"
+                    alt="attachment">
+                `
+                :
+                ""
+            }
+
+
+            ${
+                m.text
+                ?
+                `
+                <div class="text-xs whitespace-pre-wrap">
+                    ${escapeHTML(m.text)}
+                </div>
+                `
+                :
+                ""
+            }
+
+
+            <div class="text-[8px] ${
+                isUser
+                ?
+                "text-white/70"
+                :
+                "text-gray-400"
+            } text-right mt-1">
+
+                ${escapeHTML(
+                    m.date
+                )}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    `;
+
+}
+
+
+function previewMessagePhoto(input){
+
+    const file =
+        input.files &&
+        input.files[0];
+
+
+    if(!file)
+        return;
+
+
+    if(
+        !file.type.startsWith(
+            "image/"
+        )
+    ){
+
+        alert(
+            "শুধুমাত্র Image নির্বাচন করুন।"
+        );
+
+        input.value = "";
+
+        return;
+
+    }
+
+
+    const reader =
+        new FileReader();
+
+
+    reader.onload =
+        function(e){
+
+            const preview =
+                document.getElementById(
+                    "selected-photo-preview"
+                );
+
+
+            const image =
+                document.getElementById(
+                    "photo-preview-image"
+                );
+
+
+            image.src =
+                e.target.result;
+
+
+            preview.classList.remove(
+                "hidden"
+            );
+
+        };
+
+
+    reader.readAsDataURL(file);
+
+}
+
+
+function removeSelectedPhoto(){
+
+    const input =
+        document.getElementById(
+            "message-photo"
+        );
+
+
+    const preview =
+        document.getElementById(
+            "selected-photo-preview"
+        );
+
+
+    if(input)
+        input.value = "";
+
+
+    if(preview)
+        preview.classList.add(
+            "hidden"
+        );
+
+}
+
+
+function autoResizeMessage(el){
+
+    el.style.height = "auto";
+
+    el.style.height =
+        Math.min(
+            el.scrollHeight,
+            120
+        ) + "px";
+
+}
+
+
+function sendMessage(){
+
+    const user =
+        getCurrentUser();
+
+
+    const input =
+        document.getElementById(
+            "message-input"
+        );
+
+
+    const fileInput =
+        document.getElementById(
+            "message-photo"
+        );
+
+
+    const text =
+        input
+        ?
+        input.value.trim()
+        :
+        "";
+
+
+    const file =
+        fileInput &&
+        fileInput.files
+        &&
+        fileInput.files[0];
+
+
+    if(!text && !file){
+
+        alert(
+            "Message অথবা Photo দিন"
+        );
+
+        return;
+
+    }
+
+
+    function finish(imageData){
+
+        const message = {
+
+            id:Date.now(),
+
+            userId:user.id,
+
+            userPhone:user.phone,
+
+            category:
+                db.messageCategory,
+
+            sender:"user",
+
+            text:text,
+
+            image:imageData || "",
+
+            date:
+                new Date().toLocaleString(),
+
+            readByAdmin:false,
+
+            readByUser:true
+
+        };
+
+
+        db.messages.push(
+            message
+        );
+
+
+        saveData();
+
+        render();
+
+
+        setTimeout(
+            () => {
+
+                const box =
+                    document.getElementById(
+                        "chat-box"
+                    );
+
+                if(box){
+
+                    box.scrollTop =
+                        box.scrollHeight;
+
+                }
+
+            },
+            50
+        );
+
+    }
+
+
+    if(file){
+
+        if(
+            file.size >
+            2 * 1024 * 1024
+        ){
+
+            alert(
+                "Image সর্বোচ্চ 2MB হতে হবে।"
+            );
+
+            return;
+
+        }
+
+
+        const reader =
+            new FileReader();
+
+
+        reader.onload =
+            e =>
+                finish(
+                    e.target.result
+                );
+
+
+        reader.readAsDataURL(file);
+
+    }
+
+    else{
+
+        finish("");
+
+    }
+
+}
+
+
+function closeMessageCategory(){
+
+    db.messageCategory = "";
+
+    render();
+
+}
+
+
+/* =========================================================
+   MY ACCOUNT
 ========================================================= */
 
 function renderAccount(){
-    const user = getCurrentUser();
-    if(!user) return renderAuth();
+
+    const user =
+        getCurrentUser();
+
+
+    if(!user)
+        return renderAuth();
+
+
+    const unread =
+        db.messages.filter(
+            m =>
+                Number(m.userId) ===
+                Number(user.id)
+                &&
+                m.sender === "admin"
+                &&
+                m.readByUser !== true
+        ).length;
+
 
     return `
+
     <div>
-        <h2 class="text-base font-bold mb-3">👤 My Account</h2>
-        <div class="card p-4 space-y-4 shadow-sm">
+
+        <h2 class="text-base font-bold mb-3">
+            👤 My Account
+        </h2>
+
+
+        <div class="card p-4 shadow-sm">
+
             <div class="flex items-center gap-3 border-b pb-4">
+
                 <div class="w-12 h-12 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold text-lg">
                     ${user.phone.slice(-2)}
                 </div>
+
                 <div>
-                    <div class="font-bold text-sm">${escapeHTML(user.phone)}</div>
-                    <div class="text-[10px] text-gray-500">Member since: ${escapeHTML(user.createdAt || "N/A")}</div>
+
+                    <div class="font-bold text-sm">
+                        ${escapeHTML(user.phone)}
+                    </div>
+
+                    <div class="text-[10px] text-gray-500">
+                        Member since:
+                        ${escapeHTML(
+                            user.createdAt || "N/A"
+                        )}
+                    </div>
+
                 </div>
+
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
+
+            <div class="grid grid-cols-2 gap-3 mt-4">
+
                 <div class="bg-indigo-50 p-3 rounded-xl">
-                    <div class="text-[10px] text-gray-500">Balance</div>
-                    <div class="text-base font-bold text-indigo-700 mt-1">৳${Number(user.balance || 0).toFixed(2)}</div>
+
+                    <div class="text-[10px] text-gray-500">
+                        Balance
+                    </div>
+
+                    <div class="text-base font-bold text-indigo-700 mt-1">
+                        ৳${Number(
+                            user.balance || 0
+                        ).toFixed(2)}
+                    </div>
+
                 </div>
+
+
                 <div class="bg-purple-50 p-3 rounded-xl">
-                    <div class="text-[10px] text-gray-500">Total Spend</div>
-                    <div class="text-base font-bold text-purple-700 mt-1">৳${Number(user.totalSpend || 0).toFixed(2)}</div>
+
+                    <div class="text-[10px] text-gray-500">
+                        Total Spend
+                    </div>
+
+                    <div class="text-base font-bold text-purple-700 mt-1">
+                        ৳${Number(
+                            user.totalSpend || 0
+                        ).toFixed(2)}
+                    </div>
+
                 </div>
+
             </div>
 
-            <button onclick="switchTab('deposit')" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs">
-                Add Money to Balance 💰
+        </div>
+
+
+        <div class="mt-4 space-y-2">
+
+
+            <button
+                onclick="switchTab('deposit')"
+                class="w-full card p-4 flex items-center gap-3 text-left support-btn">
+
+                <div class="w-11 h-11 bg-green-50 rounded-xl flex items-center justify-center text-xl">
+                    💰
+                </div>
+
+                <div class="flex-1">
+
+                    <div class="font-bold text-sm">
+                        Add Money
+                    </div>
+
+                    <div class="text-[10px] text-gray-500">
+                        Balance recharge করুন
+                    </div>
+
+                </div>
+
+                <span class="text-gray-400">
+                    ›
+                </span>
+
             </button>
 
-            <button onclick="logout()" class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl text-xs">
+
+            <button
+                onclick="switchTab('messages')"
+                class="w-full card p-4 flex items-center gap-3 text-left support-btn">
+
+                <div class="w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center text-xl">
+                    💬
+                </div>
+
+                <div class="flex-1">
+
+                    <div class="font-bold text-sm flex items-center gap-2">
+
+                        My Live Message
+
+                        ${
+                            unread > 0
+                            ?
+                            `
+                            <span class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full">
+                                ${unread} New
+                            </span>
+                            `
+                            :
+                            ""
+                        }
+
+                    </div>
+
+                    <div class="text-[10px] text-gray-500">
+                        Admin Support Center
+                    </div>
+
+                </div>
+
+                <span class="text-gray-400">
+                    ›
+                </span>
+
+            </button>
+
+
+            <a
+                href="${window.supportTelegram || "#"}"
+                target="_blank"
+                class="w-full card p-4 flex items-center gap-3 text-left support-btn">
+
+                <div class="w-11 h-11 bg-sky-50 rounded-xl flex items-center justify-center text-xl">
+                    ✈️
+                </div>
+
+                <div class="flex-1">
+
+                    <div class="font-bold text-sm">
+                        Telegram Support Center
+                    </div>
+
+                    <div class="text-[10px] text-gray-500">
+                        Telegram-এ সরাসরি যোগাযোগ করুন
+                    </div>
+
+                </div>
+
+                <span class="text-gray-400">
+                    ›
+                </span>
+
+            </a>
+
+
+            <a
+                href="${window.supportWhatsapp || "#"}"
+                target="_blank"
+                class="w-full card p-4 flex items-center gap-3 text-left support-btn">
+
+                <div class="w-11 h-11 bg-green-50 rounded-xl flex items-center justify-center text-xl">
+                    💬
+                </div>
+
+                <div class="flex-1">
+
+                    <div class="font-bold text-sm">
+                        WhatsApp Support Center
+                    </div>
+
+                    <div class="text-[10px] text-gray-500">
+                        WhatsApp-এ সরাসরি যোগাযোগ করুন
+                    </div>
+
+                </div>
+
+                <span class="text-gray-400">
+                    ›
+                </span>
+
+            </a>
+
+
+            <button
+                onclick="logout()"
+                class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl text-xs mt-2">
                 Logout 🚪
             </button>
+
+
         </div>
-    </div>`;
+
+    </div>
+
+    `;
+
 }
 
 
 /* =========================================================
-   ADMIN PANEL
+   ORDERS
+========================================================= */
+
+function renderOrders(){
+
+    const user =
+        getCurrentUser();
+
+
+    const orders =
+        db.orders.filter(
+            o =>
+                Number(o.userId) ===
+                Number(user.id)
+        );
+
+
+    return `
+
+    <div>
+
+        <h2 class="text-base font-bold mb-3">
+            📦 My Orders
+        </h2>
+
+
+        ${
+            orders.length === 0
+            ?
+            `
+            <div class="text-center text-gray-400 text-xs py-10">
+                কোনো Order পাওয়া যায়নি।
+            </div>
+            `
+            :
+            `
+            <div class="space-y-2.5">
+
+                ${
+                    orders.map(
+                        o => `
+
+                        <div class="card p-3 shadow-sm text-xs">
+
+                            <div class="flex justify-between font-bold">
+
+                                <span>
+                                    ${escapeHTML(
+                                        o.productName ||
+                                        "Product"
+                                    )}
+                                </span>
+
+                                <span class="text-indigo-600">
+                                    ৳${Number(
+                                        o.total
+                                    ).toFixed(2)}
+                                </span>
+
+                            </div>
+
+
+                            <div class="text-gray-500 text-[10px] mt-1">
+                                Service:
+                                ${escapeHTML(
+                                    o.serviceName || ""
+                                )}
+                            </div>
+
+
+                            <div class="text-gray-500 text-[10px]">
+                                Quantity:
+                                ${Number(
+                                    o.quantity || 1
+                                )}
+                            </div>
+
+
+                            ${
+                                o.uid
+                                ?
+                                `
+                                <div class="text-gray-500 text-[10px]">
+                                    UID:
+                                    ${escapeHTML(o.uid)}
+                                </div>
+                                `
+                                :
+                                ""
+                            }
+
+
+                            ${
+                                o.link
+                                ?
+                                `
+                                <div class="text-gray-500 text-[10px] break-all">
+                                    Link:
+                                    ${escapeHTML(o.link)}
+                                </div>
+                                `
+                                :
+                                ""
+                            }
+
+
+                            <div class="text-gray-400 text-[10px] mt-1">
+                                ${escapeHTML(o.date)}
+                            </div>
+
+
+                            <div class="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-bold ${
+                                o.status === "Complete"
+                                ?
+                                "bg-green-100 text-green-700"
+                                :
+                                o.status === "Cancelled"
+                                ?
+                                "bg-red-100 text-red-700"
+                                :
+                                "bg-yellow-100 text-yellow-700"
+                            }">
+
+                                ${escapeHTML(
+                                    o.status
+                                )}
+
+                            </div>
+
+                        </div>
+
+                        `
+                    ).join("")
+                }
+
+            </div>
+            `
+        }
+
+    </div>
+
+    `;
+
+}
+
+
+/* =========================================================
+   ADMIN
 ========================================================= */
 
 function renderAdmin(){
+
     if(!db.adminLogged){
+
         return `
+
         <div class="py-10">
+
             <div class="card p-5 shadow-sm">
-                <div class="text-center text-4xl mb-2">🔐</div>
-                <h2 class="text-base font-bold text-center mb-3">Admin Login</h2>
-                <input type="password" id="admin-pass-input" placeholder="Admin Password" class="w-full border rounded-xl p-3 text-xs mb-3">
-                <button onclick="loginAdmin()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs">Login</button>
-                <button onclick="switchTab('home')" class="w-full text-gray-500 text-xs mt-3">Back to Website</button>
+
+                <div class="text-center text-4xl mb-2">
+                    🔐
+                </div>
+
+                <h2 class="text-base font-bold text-center mb-3">
+                    Admin Login
+                </h2>
+
+                <input
+                    type="password"
+                    id="admin-pass-input"
+                    placeholder="Admin Password"
+                    class="w-full border rounded-xl p-3 text-xs mb-3">
+
+                <button
+                    onclick="loginAdmin()"
+                    class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl text-xs">
+                    Login
+                </button>
+
+                <button
+                    onclick="switchTab('home')"
+                    class="w-full text-gray-500 text-xs mt-3">
+                    Back to Website
+                </button>
+
             </div>
-        </div>`;
+
+        </div>
+
+        `;
+
     }
 
+
     return `
+
     <div>
+
         <div class="bg-indigo-600 text-white rounded-xl p-3 flex justify-between items-center mb-3">
-            <span class="font-bold text-xs">⚙️ Admin Panel</span>
-            <button onclick="adminLogout()" class="bg-red-500 px-2 py-1 rounded text-[10px]">Logout</button>
+
+            <span class="font-bold text-xs">
+                ⚙️ Admin Panel
+            </span>
+
+            <button
+                onclick="adminLogout()"
+                class="bg-red-500 px-2 py-1 rounded text-[10px]">
+                Logout
+            </button>
+
         </div>
+
 
         <div class="grid grid-cols-4 gap-1.5 mb-3 text-[10px]">
-            ${adminButton("dashboard","Dashboard")}
-            ${adminButton("services","Services")}
-            ${adminButton("products","Products")}
-            ${adminButton("orders","Orders")}
-            ${adminButton("deposits","Deposits")}
-            ${adminButton("customers","Customers")}
-            ${adminButton("settings","Settings")}
+
+            ${adminButton(
+                "dashboard",
+                "Dashboard"
+            )}
+
+            ${adminButton(
+                "services",
+                "Services"
+            )}
+
+            ${adminButton(
+                "products",
+                "Products"
+            )}
+
+            ${adminButton(
+                "orders",
+                "Orders"
+            )}
+
+            ${adminButton(
+                "deposits",
+                "Deposits"
+            )}
+
+            ${adminButton(
+                "customers",
+                "Customers"
+            )}
+
+            ${adminButton(
+                "messages",
+                "Messages"
+            )}
+
+            ${adminButton(
+                "settings",
+                "Settings"
+            )}
+
         </div>
 
+
         ${renderAdminContent()}
-    </div>`;
+
+    </div>
+
+    `;
+
 }
 
-function adminButton(id, label){
+
+function adminButton(id,label){
+
     return `
-    <button onclick="setAdminSec('${id}')" class="p-2 rounded-lg font-bold ${db.adminSection===id?"bg-indigo-600 text-white":"bg-white border text-gray-700"}">
+
+    <button
+        onclick="setAdminSec('${id}')"
+        class="p-2 rounded-lg font-bold ${
+            db.adminSection === id
+            ?
+            "bg-indigo-600 text-white"
+            :
+            "bg-white border text-gray-700"
+        }">
+
         ${label}
-    </button>`;
+
+    </button>
+
+    `;
+
 }
+
 
 function loginAdmin(){
-    const pass = document.getElementById("admin-pass-input").value;
+
+    const pass =
+        document.getElementById(
+            "admin-pass-input"
+        ).value;
+
+
     if(pass === ADMIN_PASSWORD){
+
         db.adminLogged = true;
+
         render();
-    } else {
-        alert("ভুল Admin Password");
+
+    }else{
+
+        alert(
+            "ভুল Admin Password"
+        );
+
     }
+
 }
+
 
 function adminLogout(){
+
     db.adminLogged = false;
+
     db.currentTab = "home";
+
     render();
+
 }
 
+
 function setAdminSec(sec){
+
     db.adminSection = sec;
+
+    db.adminSelectedUser = null;
+
     render();
+
 }
 
 
 /* =========================================================
-   ADMIN CONTENT SECTIONS
+   ADMIN CONTENT
 ========================================================= */
 
 function renderAdminContent(){
-    if(db.adminSection === "dashboard"){
-        const pendingOrders = db.orders.filter(o => o.status === "Pending").length;
-        const pendingDeposits = db.deposits.filter(d => d.status === "Pending").length;
-        const totalBalance = db.users.reduce((sum, u) => sum + Number(u.balance || 0), 0);
+
+    if(
+        db.adminSection ===
+        "dashboard"
+    ){
+
+        const pendingOrders =
+            db.orders.filter(
+                o =>
+                    o.status === "Pending"
+            ).length;
+
+
+        const pendingDeposits =
+            db.deposits.filter(
+                d =>
+                    d.status === "Pending"
+            ).length;
+
+
+        const totalBalance =
+            db.users.reduce(
+                (sum,u) =>
+                    sum +
+                    Number(
+                        u.balance || 0
+                    ),
+                0
+            );
+
+
+        const unreadMessages =
+            db.messages.filter(
+                m =>
+                    m.sender === "user"
+                    &&
+                    m.readByAdmin !== true
+            ).length;
+
 
         return `
+
         <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="card p-3">Users: <b>${db.users.length}</b></div>
-            <div class="card p-3">Services: <b>${db.services.length}</b></div>
-            <div class="card p-3">Products: <b>${db.products.length}</b></div>
-            <div class="card p-3">Orders: <b>${db.orders.length}</b></div>
-            <div class="card p-3">Pending Orders: <b class="text-yellow-600">${pendingOrders}</b></div>
-            <div class="card p-3">Pending Deposits: <b class="text-yellow-600">${pendingDeposits}</b></div>
-            <div class="card p-3 col-span-2">Total User Balance: <b class="text-indigo-600">৳${totalBalance.toFixed(2)}</b></div>
-        </div>
-        <button onclick="switchTab('home')" class="mt-4 w-full bg-gray-900 text-white py-3 rounded-xl text-xs">Go to Website</button>`;
-    }
 
-    if(db.adminSection === "services"){
-        return `
-        <div class="card p-3 mb-3 text-xs space-y-2">
-            <div class="font-bold">➕ Add Service</div>
-            <input id="service-name" placeholder="Service Name" class="w-full border p-2 rounded">
-            <input id="service-icon" placeholder="Icon / Emoji যেমন 📘" class="w-full border p-2 rounded">
-            
-            <div>
-                <label class="text-[10px] text-gray-500 font-bold block mb-1">গ্যালারি থেকে ইমেজ আপলোড করুন:</label>
-                <input type="file" id="service-img-file" accept="image/*" class="w-full border p-2 rounded text-[10px] bg-white">
+            <div class="card p-3">
+                Users:
+                <b>${db.users.length}</b>
             </div>
 
-            <textarea id="service-desc" placeholder="Service Description" class="w-full border p-2 rounded"></textarea>
-            <button onclick="addService()" class="w-full bg-green-600 text-white py-2 rounded font-bold">Add Service</button>
+            <div class="card p-3">
+                Services:
+                <b>${db.services.length}</b>
+            </div>
+
+            <div class="card p-3">
+                Products:
+                <b>${db.products.length}</b>
+            </div>
+
+            <div class="card p-3">
+                Orders:
+                <b>${db.orders.length}</b>
+            </div>
+
+            <div class="card p-3">
+                Pending Orders:
+                <b class="text-yellow-600">
+                    ${pendingOrders}
+                </b>
+            </div>
+
+            <div class="card p-3">
+                Pending Deposits:
+                <b class="text-yellow-600">
+                    ${pendingDeposits}
+                </b>
+            </div>
+
+            <div class="card p-3">
+                New Messages:
+                <b class="text-red-600">
+                    ${unreadMessages}
+                </b>
+            </div>
+
+            <div class="card p-3">
+                Total Messages:
+                <b>
+                    ${db.messages.length}
+                </b>
+            </div>
+
+            <div class="card p-3 col-span-2">
+                Total User Balance:
+                <b class="text-indigo-600">
+                    ৳${totalBalance.toFixed(2)}
+                </b>
+            </div>
+
         </div>
-        <div class="space-y-2 max-h-[300px] overflow-y-auto no-scrollbar pr-1">
-            ${db.services.map(s => `
-                <div class="card p-3 text-xs">
-                    <div class="flex items-center gap-3">
-                        <div class="service-icon bg-gray-100">
-                            ${s.image ? `<img src="${s.image}" alt="">` : (s.icon || "🛍️")}
-                        </div>
-                        <div class="flex-1">
-                            <div class="font-bold">${escapeHTML(s.name)}</div>
-                            <div class="text-[10px] text-gray-500">${escapeHTML(s.description || "")}</div>
-                            <div class="text-[10px] mt-1 ${s.active!==false?"text-green-600":"text-red-600"}">${s.active!==false?"Active":"Inactive"}</div>
-                        </div>
-                    </div>
-                    <div class="flex gap-1 mt-3">
-                        <button onclick="toggleService('${escapeAttr(s.id)}')" class="bg-gray-800 text-white px-2 py-1 rounded text-[10px]">Active/Off</button>
-                        <button onclick="editService('${escapeAttr(s.id)}')" class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px]">Edit</button>
-                        <button onclick="deleteService('${escapeAttr(s.id)}')" class="bg-red-500 text-white px-2 py-1 rounded text-[10px]">Delete</button>
-                    </div>
-                </div>
-            `).join("")}
-        </div>`;
+
+
+        <button
+            onclick="switchTab('home')"
+            class="mt-4 w-full bg-gray-900 text-white py-3 rounded-xl text-xs">
+            Go to Website
+        </button>
+
+        `;
+
     }
 
-    if(db.adminSection === "products"){
+
+    /* =====================================================
+       SERVICES ADMIN
+    ===================================================== */
+
+    if(
+        db.adminSection ===
+        "services"
+    ){
+
         return `
+
         <div class="card p-3 mb-3 text-xs space-y-2">
-            <div class="font-bold">➕ Add Product</div>
-            <input id="product-name" placeholder="Product Name" class="w-full border p-2 rounded">
-            <input type="number" id="product-price" placeholder="Price" class="w-full border p-2 rounded">
-            <select id="product-service" class="w-full border p-2 rounded">
-                ${db.services.map(s => `<option value="${escapeAttr(s.id)}">${escapeHTML(s.name)}</option>`).join("")}
+
+            <div class="font-bold">
+                ➕ Add Unlimited Service
+            </div>
+
+
+            <input
+                id="service-name"
+                placeholder="Service Name"
+                class="w-full border p-2 rounded">
+
+
+            <input
+                id="service-icon"
+                placeholder="Icon / Emoji যেমন 📘"
+                class="w-full border p-2 rounded">
+
+
+            <select
+                id="service-type"
+                class="w-full border p-2 rounded">
+
+                <option value="game">
+                    Game
+                </option>
+
+                <option value="social">
+                    Social Media
+                </option>
+
+                <option value="premium">
+                    Premium
+                </option>
+
+                <option value="other">
+                    Other
+                </option>
+
             </select>
-            <select id="product-input" class="w-full border p-2 rounded">
-                <option value="uid">UID</option>
-                <option value="link">Link</option>
-                <option value="text">Text / Other</option>
-            </select>
-            <input id="product-category" placeholder="Category" class="w-full border p-2 rounded">
-            <textarea id="product-description" placeholder="Product Description" class="w-full border p-2 rounded"></textarea>
-            <textarea id="product-rules" placeholder="Rules / Instructions" class="w-full border p-2 rounded"></textarea>
-            <button onclick="addProduct()" class="w-full bg-green-600 text-white py-2 rounded font-bold">Add Product</button>
+
+
+            <div>
+
+                <label class="text-[10px] text-gray-500 font-bold block mb-1">
+                    Service Image
+                </label>
+
+                <input
+                    type="file"
+                    id="service-img-file"
+                    accept="image/*"
+                    class="w-full border p-2 rounded text-[10px] bg-white">
+
+            </div>
+
+
+            <textarea
+                id="service-desc"
+                placeholder="Service Description"
+                class="w-full border p-2 rounded"></textarea>
+
+
+            <button
+                onclick="addService()"
+                class="w-full bg-green-600 text-white py-2 rounded font-bold">
+                Add Service
+            </button>
+
         </div>
-        <div class="space-y-2">
-            ${db.products.map(p => `
-                <div class="card p-3 text-xs">
-                    <div class="font-bold">${escapeHTML(p.name)}</div>
-                    <div class="text-indigo-600 font-bold">৳${Number(p.price).toFixed(2)}</div>
-                    <div class="text-[10px] text-gray-500">Service: ${escapeHTML(getServiceName(p.serviceId))}</div>
-                    <div class="flex gap-1 mt-3">
-                        <button onclick="toggleProduct(${Number(p.id)})" class="bg-gray-800 text-white px-2 py-1 rounded text-[10px]">Active/Off</button>
-                        <button onclick="editProduct(${Number(p.id)})" class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px]">Edit</button>
-                        <button onclick="deleteProduct(${Number(p.id)})" class="bg-red-500 text-white px-2 py-1 rounded text-[10px]">Delete</button>
-                    </div>
-                </div>
-            `).join("")}
-        </div>`;
-    }
 
-    if(db.adminSection === "orders"){
-        return `
-        <div class="space-y-2">
-            ${db.orders.length === 0 ? `<div class="text-center text-gray-400 text-xs py-10">কোনো Order নেই।</div>` : db.orders.map(o => `
-                <div class="card p-3 text-xs">
-                    <div class="font-bold">${escapeHTML(o.productName || "Product")}</div>
-                    <div class="text-indigo-600 font-bold">৳${Number(o.total).toFixed(2)}</div>
-                    <div class="text-[10px] text-gray-600">User: ${escapeHTML(o.userPhone)}</div>
-                    <div class="text-[10px] text-gray-600 break-all">Target: ${escapeHTML(o.target || o.uid || o.link || "")}</div>
-                    <div class="text-[10px] text-gray-400">${escapeHTML(o.date)}</div>
-                    <div class="flex gap-1 mt-2">
-                        <button onclick="setOrderStatus(${Number(o.id)},'Pending')" class="bg-yellow-500 text-white px-2 py-1 rounded text-[10px]">Pending</button>
-                        <button onclick="setOrderStatus(${Number(o.id)},'Complete')" class="bg-green-600 text-white px-2 py-1 rounded text-[10px]">Complete</button>
-                        <button onclick="setOrderStatus(${Number(o.id)},'Cancelled')" class="bg-red-500 text-white px-2 py-1 rounded text-[10px]">Cancel</button>
-                    </div>
-                </div>
-            `).join("")}
-        </div>`;
-    }
 
-    if(db.adminSection === "deposits"){
-        return `
-        <div class="space-y-2">
-            ${db.deposits.length === 0 ? `<div class="text-center text-gray-400 text-xs py-10">কোনো Deposit নেই।</div>` : db.deposits.map(d => `
-                <div class="card p-3 text-xs">
-                    <div class="font-bold">${escapeHTML(d.userPhone)}</div>
-                    <div class="text-indigo-600 font-bold">৳${Number(d.amount).toFixed(2)}</div>
-                    <div class="text-[10px]">Method: ${escapeHTML(d.method)}</div>
-                    <div class="text-[10px]">Sender: ${escapeHTML(d.senderNumber)}</div>
-                    <div class="text-[10px]">TrxID: ${escapeHTML(d.trxId)}</div>
-                    ${d.status === "Pending" ? `
-                        <div class="flex gap-2 mt-2">
-                            <button onclick="approveDeposit(${Number(d.id)})" class="bg-green-600 text-white px-3 py-1 rounded text-[10px]">Approve</button>
-                            <button onclick="cancelDeposit(${Number(d.id)})" class="bg-red-500 text-white px-3 py-1 rounded text-[10px]">Cancel</button>
+        <div class="space-y-2 max-h-[420px] overflow-y-auto no-scrollbar pr-1">
+
+            ${
+                db.services.map(
+                    s => `
+
+                    <div class="card p-3 text-xs">
+
+                        <div class="flex items-center gap-3">
+
+                            <div class="service-icon bg-gray-100">
+
+                                ${
+                                    s.image
+                                    ?
+                                    `<img src="${s.image}" alt="">`
+                                    :
+                                    (
+                                        s.icon ||
+                                        "🛍️"
+                                    )
+                                }
+
+                            </div>
+
+
+                            <div class="flex-1 min-w-0">
+
+                                <div class="font-bold">
+                                    ${escapeHTML(s.name)}
+                                </div>
+
+                                <div class="text-[10px] text-gray-500">
+                                    Type:
+                                    ${escapeHTML(s.type || "other")}
+                                </div>
+
+                                <div class="text-[10px] text-gray-500">
+                                    ${escapeHTML(
+                                        s.description || ""
+                                    )}
+                                </div>
+
+                                <div class="text-[10px] mt-1 ${
+                                    s.active !== false
+                                    ?
+                                    "text-green-600"
+                                    :
+                                    "text-red-600"
+                                }">
+
+                                    ${
+                                        s.active !== false
+                                        ?
+                                        "Active"
+                                        :
+                                        "Inactive"
+                                    }
+
+                                </div>
+
+                            </div>
+
                         </div>
-                    ` : `<div class="mt-2 text-[10px] font-bold">Status: ${escapeHTML(d.status)}</div>`}
-                </div>
-            `).join("")}
-        </div>`;
-    }
 
-    if(db.adminSection === "customers"){
-        return `
-        <div class="space-y-2">
-            ${db.users.length === 0 ? `<div class="text-center text-gray-400 text-xs py-10">কোনো Customer নেই।</div>` : db.users.map(u => `
-                <div class="card p-3 flex justify-between items-center text-xs">
-                    <div>
-                        <div class="font-bold">${escapeHTML(u.phone)}</div>
-                        <div class="text-indigo-600">Balance: ৳${Number(u.balance || 0).toFixed(2)}</div>
-                        <div class="text-[10px] text-gray-500">Spend: ৳${Number(u.totalSpend || 0).toFixed(2)}</div>
+
+                        <div class="flex flex-wrap gap-1 mt-3">
+
+                            <button
+                                onclick="toggleService('${escapeAttr(s.id)}')"
+                                class="bg-gray-800 text-white px-2 py-1 rounded text-[10px]">
+                                Active/Off
+                            </button>
+
+
+                            <button
+                                onclick="editService('${escapeAttr(s.id)}')"
+                                class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px]">
+                                Edit
+                            </button>
+
+
+                            <button
+                                onclick="changeServiceImage('${escapeAttr(s.id)}')"
+                                class="bg-sky-600 text-white px-2 py-1 rounded text-[10px]">
+                                Image
+                            </button>
+
+
+                            <button
+                                onclick="deleteService('${escapeAttr(s.id)}')"
+                                class="bg-red-500 text-white px-2 py-1 rounded text-[10px]">
+                                Delete
+                            </button>
+
+                        </div>
+
                     </div>
-                    <button onclick="addBalancePrompt(${Number(u.id)})" class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px]">Add Balance</button>
-                </div>
-            `).join("")}
-        </div>`;
+
+                    `
+                ).join("")
+            }
+
+        </div>
+
+        `;
+
     }
 
-    if(db.adminSection === "settings"){
+
+    /* =====================================================
+       PRODUCTS ADMIN
+    ===================================================== */
+
+    if(
+        db.adminSection ===
+        "products"
+    ){
+
         return `
-        <div class="card p-3 text-xs space-y-2">
-            <div class="font-bold text-sm">⚙️ Website Settings</div>
-            <label>Shop Name</label>
-            <input id="set-name" value="${escapeAttr(db.settings.shopName || "")}" class="w-full border p-2 rounded">
-            <label>Payment Number</label>
-            <input id="set-pay" value="${escapeAttr(db.settings.paymentNumber || "")}" class="w-full border p-2 rounded">
-            <label>WhatsApp Number</label>
-            <input id="set-wa" value="${escapeAttr(db.settings.whatsappNumber || "")}" class="w-full border p-2 rounded">
-            <label>Telegram Username / Link</label>
-            <input id="set-tg" value="${escapeAttr(db.settings.telegramUsername || "")}" class="w-full border p-2 rounded">
-            <label>Notice</label>
-            <textarea id="set-notice" class="w-full border p-2 rounded">${escapeHTML(db.settings.notice || "")}</textarea>
-            <button onclick="saveSettings()" class="w-full bg-indigo-600 text-white py-2.5 rounded font-bold">Save Changes</button>
-        </div>`;
+
+        <div class="card p-3 mb-3 text-xs space-y-2">
+
+            <div class="font-bold">
+                ➕ Add Unlimited Product
+            </div>
+
+
+            <input
+                id="product-name"
+                placeholder="Product Name"
+                class="w-full border p-2 rounded">
+
+
+            <input
+                type="number"
+                id="product-price"
+                placeholder="Price"
+                class="w-full border p-2 rounded">
+
+
+            <select
+                id="product-service"
+                class="w-full border p-2 rounded">
+
+                ${
+                    db.services.map(
+                        s =>
+                        `
+                        <option value="${escapeAttr(s.id)}">
+                            ${escapeHTML(s.name)}
+                        </option>
+                        `
+                    ).join("")
+                }
+
+            </select>
+
+
+            <select
+                id="product-input"
+                class="w-full border p-2 rounded">
+
+                <option value="uid">
+                    UID
+                </option>
+
+                <option value="link">
+                    Link
+                </option>
+
+                <option value="text">
+                    Text / Other
+                </option>
+
+            </select>
+
+
+            <input
+                id="product-category"
+                placeholder="Category"
+                class="w-full border p-2 rounded">
+
+
+            <textarea
+                id="product-description"
+                placeholder="Product Description"
+                class="w-full border p-2 rounded"></textarea>
+
+
+            <textarea
+                id="product-rules"
+                placeholder="Rules / Instructions"
+                class="w-full border p-2 rounded"></textarea>
+
+
+            <button
+                onclick="addProduct()"
+                class="w-full bg-green-600 text-white py-2 rounded font-bold">
+                Add Product
+            </button>
+
+        </div>
+
+
+        <div class="space-y-2">
+
+            ${
+                db.products.map(
+                    p => `
+
+                    <div class="card p-3 text-xs">
+
+                        <div class="font-bold">
+                            ${escapeHTML(p.name)}
+                        </div>
+
+                        <div class="text-indigo-600 font-bold">
+                            ৳${Number(p.price).toFixed(2)}
+                        </div>
+
+                        <div class="text-[10px] text-gray-500">
+                            Service:
+                            ${escapeHTML(
+                                getServiceName(
+                                    p.serviceId
+                                )
+                            )}
+                        </div>
+
+                        <div class="text-[10px] ${
+                            p.active !== false
+                            ?
+                            "text-green-600"
+                            :
+                            "text-red-600"
+                        }">
+
+                            ${
+                                p.active !== false
+                                ?
+                                "Active"
+                                :
+                                "Inactive"
+                            }
+
+                        </div>
+
+
+                        <div class="flex flex-wrap gap-1 mt-3">
+
+                            <button
+                                onclick="toggleProduct(${Number(p.id)})"
+                                class="bg-gray-800 text-white px-2 py-1 rounded text-[10px]">
+                                Active/Off
+                            </button>
+
+                            <button
+                                onclick="editProduct(${Number(p.id)})"
+                                class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px]">
+                                Edit
+                            </button>
+
+                            <button
+                                onclick="deleteProduct(${Number(p.id)})"
+                                class="bg-red-500 text-white px-2 py-1 rounded text-[10px]">
+                                Delete
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    `
+                ).join("")
+            }
+
+        </div>
+
+        `;
+
     }
+
+
+    /* =====================================================
+       ORDERS ADMIN
+    ===================================================== */
+
+    if(
+        db.adminSection ===
+        "orders"
+    ){
+
+        return `
+
+        <div class="space-y-2">
+
+            ${
+                db.orders.length === 0
+                ?
+                `
+                <div class="text-center text-gray-400 text-xs py-10">
+                    কোনো Order নেই।
+                </div>
+                `
+                :
+                db.orders.map(
+                    o => `
+
+                    <div class="card p-3 text-xs">
+
+                        <div class="font-bold">
+                            ${escapeHTML(
+                                o.productName ||
+                                "Product"
+                            )}
+                        </div>
+
+                        <div class="text-indigo-600 font-bold">
+                            ৳${Number(
+                                o.total
+                            ).toFixed(2)}
+                        </div>
+
+                        <div class="text-[10px] text-gray-600">
+                            User:
+                            ${escapeHTML(
+                                o.userPhone
+                            )}
+                        </div>
+
+                        <div class="text-[10px] text-gray-600 break-all">
+                            Target:
+                            ${escapeHTML(
+                                o.target ||
+                                o.uid ||
+                                o.link ||
+                                ""
+                            )}
+                        </div>
+
+                        <div class="text-[10px] text-gray-400">
+                            ${escapeHTML(
+                                o.date
+                            )}
+                        </div>
+
+
+                        <div class="flex gap-1 mt-2">
+
+                            <button
+                                onclick="setOrderStatus(${Number(o.id)},'Pending')"
+                                class="bg-yellow-500 text-white px-2 py-1 rounded text-[10px]">
+                                Pending
+                            </button>
+
+                            <button
+                                onclick="setOrderStatus(${Number(o.id)},'Complete')"
+                                class="bg-green-600 text-white px-2 py-1 rounded text-[10px]">
+                                Complete
+                            </button>
+
+                            <button
+                                onclick="setOrderStatus(${Number(o.id)},'Cancelled')"
+                                class="bg-red-500 text-white px-2 py-1 rounded text-[10px]">
+                                Cancel
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    `
+                ).join("")
+            }
+
+        </div>
+
+        `;
+
+    }
+
+
+    /* =====================================================
+       DEPOSITS ADMIN
+    ===================================================== */
+
+    if(
+        db.adminSection ===
+        "deposits"
+    ){
+
+        return `
+
+        <div class="space-y-2">
+
+            ${
+                db.deposits.length === 0
+                ?
+                `
+                <div class="text-center text-gray-400 text-xs py-10">
+                    কোনো Deposit নেই।
+                </div>
+                `
+                :
+                db.deposits.map(
+                    d => `
+
+                    <div class="card p-3 text-xs">
+
+                        <div class="font-bold">
+                            ${escapeHTML(
+                                d.userPhone
+                            )}
+                        </div>
+
+                        <div class="text-indigo-600 font-bold">
+                            ৳${Number(
+                                d.amount
+                            ).toFixed(2)}
+                        </div>
+
+                        <div class="text-[10px]">
+                            Method:
+                            ${escapeHTML(d.method)}
+                        </div>
+
+                        <div class="text-[10px]">
+                            Sender:
+                            ${escapeHTML(
+                                d.senderNumber
+                            )}
+                        </div>
+
+                        <div class="text-[10px]">
+                            TrxID:
+                            ${escapeHTML(
+                                d.trxId
+                            )}
+                        </div>
+
+
+                        ${
+                            d.status === "Pending"
+                            ?
+                            `
+                            <div class="flex gap-2 mt-2">
+
+                                <button
+                                    onclick="approveDeposit(${Number(d.id)})"
+                                    class="bg-green-600 text-white px-3 py-1 rounded text-[10px]">
+                                    Approve
+                                </button>
+
+                                <button
+                                    onclick="cancelDeposit(${Number(d.id)})"
+                                    class="bg-red-500 text-white px-3 py-1 rounded text-[10px]">
+                                    Cancel
+                                </button>
+
+                            </div>
+                            `
+                            :
+                            `
+                            <div class="mt-2 text-[10px] font-bold">
+                                Status:
+                                ${escapeHTML(
+                                    d.status
+                                )}
+                            </div>
+                            `
+                        }
+
+                    </div>
+
+                    `
+                ).join("")
+            }
+
+        </div>
+
+        `;
+
+    }
+
+
+    /* =====================================================
+       CUSTOMERS
+    ===================================================== */
+
+    if(
+        db.adminSection ===
+        "customers"
+    ){
+
+        return `
+
+        <div class="space-y-2">
+
+            ${
+                db.users.length === 0
+                ?
+                `
+                <div class="text-center text-gray-400 text-xs py-10">
+                    কোনো Customer নেই।
+                </div>
+                `
+                :
+                db.users.map(
+                    u => `
+
+                    <div class="card p-3 flex justify-between items-center text-xs">
+
+                        <div>
+
+                            <div class="font-bold">
+                                ${escapeHTML(u.phone)}
+                            </div>
+
+                            <div class="text-indigo-600">
+                                Balance:
+                                ৳${Number(
+                                    u.balance || 0
+                                ).toFixed(2)}
+                            </div>
+
+                            <div class="text-[10px] text-gray-500">
+                                Spend:
+                                ৳${Number(
+                                    u.totalSpend || 0
+                                ).toFixed(2)}
+                            </div>
+
+                        </div>
+
+
+                        <button
+                            onclick="addBalancePrompt(${Number(u.id)})"
+                            class="bg-indigo-600 text-white px-2 py-1 rounded text-[10px]">
+                            Add Balance
+                        </button>
+
+                    </div>
+
+                    `
+                ).join("")
+            }
+
+        </div>
+
+        `;
+
+    }
+
+
+    /* =====================================================
+       MESSAGES ADMIN
+    ===================================================== */
+
+    if(
+        db.adminSection ===
+        "messages"
+    ){
+
+        if(db.adminSelectedUser){
+
+            return renderAdminChat();
+
+        }
+
+
+        const grouped = {};
+
+        db.messages.forEach(
+            m => {
+
+                const key =
+                    String(m.userId);
+
+
+                if(!grouped[key]){
+
+                    grouped[key] = {
+
+                        userId:m.userId,
+
+                        phone:m.userPhone,
+
+                        messages:[]
+
+                    };
+
+                }
+
+
+                grouped[key].messages.push(m);
+
+            }
+        );
+
+
+        const conversations =
+            Object.values(grouped);
+
+
+        conversations.sort(
+            (a,b) =>
+                new Date(
+                    b.messages[
+                        b.messages.length - 1
+                    ].date
+                )
+                -
+                new Date(
+                    a.messages[
+                        a.messages.length - 1
+                    ].date
+                )
+        );
+
+
+        return `
+
+        <div>
+
+            <div class="card p-4 mb-3">
+
+                <div class="font-bold text-sm">
+                    💬 Customer Messages
+                </div>
+
+                <div class="text-[10px] text-gray-500 mt-1">
+                    Customer-এর ফোন নম্বর অনুযায়ী conversation এখানে দেখা যাবে।
+                </div>
+
+            </div>
+
+
+            <div class="space-y-2">
+
+                ${
+                    conversations.length === 0
+                    ?
+                    `
+                    <div class="text-center text-gray-400 text-xs py-10">
+                        এখনো কোনো Message নেই।
+                    </div>
+                    `
+                    :
+                    conversations.map(
+                        c => {
+
+                            const last =
+                                c.messages[
+                                    c.messages.length - 1
+                                ];
+
+
+                            const unread =
+                                c.messages.filter(
+                                    m =>
+                                        m.sender === "user"
+                                        &&
+                                        m.readByAdmin !== true
+                                ).length;
+
+
+                            return `
+
+                            <button
+                                onclick="openAdminChat(${Number(c.userId)})"
+                                class="w-full card p-3 text-left">
+
+                                <div class="flex items-center gap-3">
+
+                                    <div class="w-11 h-11 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-bold">
+                                        ${escapeHTML(
+                                            c.phone.slice(-2)
+                                        )}
+                                    </div>
+
+                                    <div class="flex-1 min-w-0">
+
+                                        <div class="flex justify-between">
+
+                                            <span class="font-bold text-xs">
+                                                ${escapeHTML(c.phone)}
+                                            </span>
+
+                                            ${
+                                                unread > 0
+                                                ?
+                                                `
+                                                <span class="bg-red-500 text-white text-[8px] px-1.5 py-0.5 rounded-full">
+                                                    ${unread} New
+                                                </span>
+                                                `
+                                                :
+                                                ""
+                                            }
+
+                                        </div>
+
+
+                                        <div class="text-[10px] text-indigo-600 mt-1">
+                                            ${escapeHTML(
+                                                getMessageCategoryName(
+                                                    last.category
+                                                )
+                                            )}
+                                        </div>
+
+
+                                        <div class="text-[10px] text-gray-500 truncate mt-1">
+                                            ${
+                                                last.text
+                                                ?
+                                                escapeHTML(
+                                                    last.text
+                                                )
+                                                :
+                                                "📷 Photo"
+                                            }
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </button>
+
+                            `;
+
+                        }
+                    ).join("")
+                }
+
+            </div>
+
+        </div>
+
+        `;
+
+    }
+
+
+    /* =====================================================
+       SETTINGS
+    ===================================================== */
+
+    if(
+        db.adminSection ===
+        "settings"
+    ){
+
+        return `
+
+        <div class="card p-3 text-xs space-y-2">
+
+            <div class="font-bold text-sm">
+                ⚙️ Website Settings
+            </div>
+
+
+            <label>
+                Shop Name
+            </label>
+
+            <input
+                id="set-name"
+                value="${escapeAttr(
+                    db.settings.shopName || ""
+                )}"
+                class="w-full border p-2 rounded">
+
+
+            <label>
+                Payment Number
+            </label>
+
+            <input
+                id="set-pay"
+                value="${escapeAttr(
+                    db.settings.paymentNumber || ""
+                )}"
+                class="w-full border p-2 rounded">
+
+
+            <label>
+                WhatsApp Number
+            </label>
+
+            <input
+                id="set-wa"
+                value="${escapeAttr(
+                    db.settings.whatsappNumber || ""
+                )}"
+                class="w-full border p-2 rounded">
+
+
+            <label>
+                Telegram Username / Link
+            </label>
+
+            <input
+                id="set-tg"
+                value="${escapeAttr(
+                    db.settings.telegramUsername || ""
+                )}"
+                class="w-full border p-2 rounded">
+
+
+            <label>
+                Notice
+            </label>
+
+            <textarea
+                id="set-notice"
+                class="w-full border p-2 rounded">${escapeHTML(
+                    db.settings.notice || ""
+                )}</textarea>
+
+
+            <button
+                onclick="saveSettings()"
+                class="w-full bg-indigo-600 text-white py-2.5 rounded font-bold">
+                Save Changes
+            </button>
+
+        </div>
+
+        `;
+
+    }
+
 
     return "";
+
 }
 
 
 /* =========================================================
-   ADMIN ACTIONS
+   ADMIN CHAT
+========================================================= */
+
+function openAdminChat(userId){
+
+    db.adminSelectedUser =
+        Number(userId);
+
+    markAdminMessagesRead(
+        Number(userId)
+    );
+
+    render();
+
+}
+
+
+function markAdminMessagesRead(userId){
+
+    db.messages.forEach(
+        m => {
+
+            if(
+                Number(m.userId) ===
+                Number(userId)
+                &&
+                m.sender === "user"
+            ){
+
+                m.readByAdmin = true;
+
+            }
+
+        }
+    );
+
+
+    saveData();
+
+}
+
+
+function renderAdminChat(){
+
+    const user =
+        db.users.find(
+            u =>
+                Number(u.id) ===
+                Number(db.adminSelectedUser)
+        );
+
+
+    if(!user){
+
+        db.adminSelectedUser = null;
+
+        return renderAdminContent();
+
+    }
+
+
+    const messages =
+        db.messages.filter(
+            m =>
+                Number(m.userId) ===
+                Number(user.id)
+        );
+
+
+    const categoryIds =
+        [
+            ...new Set(
+                messages.map(
+                    m => m.category
+                )
+            )
+        ];
+
+
+    return `
+
+    <div>
+
+        <div class="bg-indigo-600 text-white rounded-xl p-3 mb-3">
+
+            <div class="flex items-center gap-2">
+
+                <button
+                    onclick="backAdminMessages()"
+                    class="bg-white/20 px-2 py-1 rounded">
+                    ←
+                </button>
+
+                <div class="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center font-bold">
+                    ${escapeHTML(
+                        user.phone.slice(-2)
+                    )}
+                </div>
+
+                <div>
+
+                    <div class="font-bold text-xs">
+                        ${escapeHTML(user.phone)}
+                    </div>
+
+                    <div class="text-[9px] opacity-80">
+                        Customer Support Chat
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        ${
+            categoryIds.map(
+                cat => `
+
+                <div class="bg-yellow-50 border border-yellow-100 rounded-xl p-2 mb-2 text-[10px]">
+
+                    সমস্যা:
+                    <b>
+                        ${escapeHTML(
+                            getMessageCategoryName(
+                                cat
+                            )
+                        )}
+                    </b>
+
+                </div>
+
+                `
+            ).join("")
+        }
+
+
+        <div
+            id="admin-chat-box"
+            class="bg-white border rounded-2xl p-3 min-h-[380px] max-h-[500px] overflow-y-auto">
+
+            ${
+                messages.length === 0
+                ?
+                `
+                <div class="text-center text-gray-400 text-xs py-10">
+                    কোনো Message নেই।
+                </div>
+                `
+                :
+                messages.map(
+                    m => `
+
+                    <div class="flex ${
+                        m.sender === "admin"
+                        ?
+                        "justify-end"
+                        :
+                        "justify-start"
+                    } mb-3">
+
+                        <div class="message-bubble ${
+                            m.sender === "admin"
+                            ?
+                            "message-user"
+                            :
+                            "message-admin"
+                        } px-3 py-2">
+
+                            ${
+                                m.image
+                                ?
+                                `
+                                <img
+                                    src="${m.image}"
+                                    class="message-image">
+                                `
+                                :
+                                ""
+                            }
+
+                            ${
+                                m.text
+                                ?
+                                `
+                                <div class="text-xs whitespace-pre-wrap">
+                                    ${escapeHTML(
+                                        m.text
+                                    )}
+                                </div>
+                                `
+                                :
+                                ""
+                            }
+
+                            <div class="text-[8px] ${
+                                m.sender === "admin"
+                                ?
+                                "text-white/70"
+                                :
+                                "text-gray-400"
+                            } text-right mt-1">
+
+                                ${escapeHTML(
+                                    m.date
+                                )}
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    `
+                ).join("")
+            }
+
+        </div>
+
+
+        <div class="bg-white border rounded-2xl p-2 mt-2">
+
+            <div
+                id="admin-selected-photo-preview"
+                class="hidden px-2 pt-1 pb-2">
+
+                <img
+                    id="admin-photo-preview"
+                    class="w-20 h-20 object-cover rounded-xl">
+
+            </div>
+
+
+            <div class="flex items-end gap-2">
+
+                <label
+                    class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-xl cursor-pointer">
+
+                    📷
+
+                    <input
+                        type="file"
+                        id="admin-message-photo"
+                        accept="image/*"
+                        class="hidden"
+                        onchange="previewAdminPhoto(this)">
+
+                </label>
+
+
+                <textarea
+                    id="admin-message-input"
+                    rows="1"
+                    placeholder="Reply to customer..."
+                    class="flex-1 border rounded-2xl px-4 py-2.5 text-xs"
+                    oninput="autoResizeMessage(this)"></textarea>
+
+
+                <button
+                    onclick="sendAdminMessage()"
+                    class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center text-lg">
+                    ➤
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    `;
+
+}
+
+
+function backAdminMessages(){
+
+    db.adminSelectedUser = null;
+
+    render();
+
+}
+
+
+function previewAdminPhoto(input){
+
+    const file =
+        input.files &&
+        input.files[0];
+
+
+    if(!file)
+        return;
+
+
+    if(
+        !file.type.startsWith(
+            "image/"
+        )
+    ){
+
+        alert(
+            "শুধুমাত্র Image নির্বাচন করুন।"
+        );
+
+        input.value = "";
+
+        return;
+
+    }
+
+
+    if(
+        file.size >
+        2 * 1024 * 1024
+    ){
+
+        alert(
+            "Image সর্বোচ্চ 2MB হতে হবে।"
+        );
+
+        input.value = "";
+
+        return;
+
+    }
+
+
+    const reader =
+        new FileReader();
+
+
+    reader.onload =
+        e => {
+
+            document.getElementById(
+                "admin-photo-preview"
+            ).src =
+                e.target.result;
+
+
+            document.getElementById(
+                "admin-selected-photo-preview"
+            ).classList.remove(
+                "hidden"
+            );
+
+        };
+
+
+    reader.readAsDataURL(file);
+
+}
+
+
+function sendAdminMessage(){
+
+    const user =
+        db.users.find(
+            u =>
+                Number(u.id) ===
+                Number(db.adminSelectedUser)
+        );
+
+
+    if(!user)
+        return;
+
+
+    const input =
+        document.getElementById(
+            "admin-message-input"
+        );
+
+
+    const fileInput =
+        document.getElementById(
+            "admin-message-photo"
+        );
+
+
+    const text =
+        input
+        ?
+        input.value.trim()
+        :
+        "";
+
+
+    const file =
+        fileInput &&
+        fileInput.files
+        &&
+        fileInput.files[0];
+
+
+    if(!text && !file){
+
+        alert(
+            "Message অথবা Photo দিন"
+        );
+
+        return;
+
+    }
+
+
+    const category =
+        getUserCurrentCategory(
+            user.id
+        );
+
+
+    function finish(imageData){
+
+        db.messages.push({
+
+            id:Date.now(),
+
+            userId:user.id,
+
+            userPhone:user.phone,
+
+            category:category || "other",
+
+            sender:"admin",
+
+            text:text,
+
+            image:imageData || "",
+
+            date:
+                new Date().toLocaleString(),
+
+            readByAdmin:true,
+
+            readByUser:false
+
+        });
+
+
+        saveData();
+
+        render();
+
+    }
+
+
+    if(file){
+
+        const reader =
+            new FileReader();
+
+
+        reader.onload =
+            e =>
+                finish(
+                    e.target.result
+                );
+
+
+        reader.readAsDataURL(file);
+
+    }
+
+    else{
+
+        finish("");
+
+    }
+
+}
+
+
+function getUserCurrentCategory(userId){
+
+    const list =
+        db.messages.filter(
+            m =>
+                Number(m.userId) ===
+                Number(userId)
+        );
+
+
+    if(list.length === 0)
+        return "other";
+
+
+    return list[
+        list.length - 1
+    ].category || "other";
+
+}
+
+
+function getMessageCategoryName(id){
+
+    const category =
+        MESSAGE_CATEGORIES.find(
+            c =>
+                c.id === id
+        );
+
+
+    return category
+        ?
+        category.title
+        :
+        "Other Problem";
+
+}
+
+
+/* =========================================================
+   SERVICE ADMIN ACTIONS
 ========================================================= */
 
 function addService(){
-    const name = document.getElementById("service-name").value.trim();
-    const icon = document.getElementById("service-icon").value.trim() || "🛍️";
-    const description = document.getElementById("service-desc").value.trim();
-    const fileInput = document.getElementById("service-img-file");
 
-    if(!name){ alert("Service Name দিন"); return; }
+    const name =
+        document.getElementById(
+            "service-name"
+        ).value.trim();
 
-    const id = "service_" + Date.now();
 
-    if(fileInput.files && fileInput.files[0]){
-        const reader = new FileReader();
-        reader.onload = function(e){
-            db.services.push({ id, name, icon, image: e.target.result, type: "custom", active: true, description });
-            saveData();
-            render();
-        };
-        reader.readAsDataURL(fileInput.files[0]);
-    } else {
-        db.services.push({ id, name, icon, image: "", type: "custom", active: true, description });
-        saveData();
-        render();
+    const icon =
+        document.getElementById(
+            "service-icon"
+        ).value.trim()
+        ||
+        "🛍️";
+
+
+    const type =
+        document.getElementById(
+            "service-type"
+        ).value;
+
+
+    const description =
+        document.getElementById(
+            "service-desc"
+        ).value.trim();
+
+
+    const fileInput =
+        document.getElementById(
+            "service-img-file"
+        );
+
+
+    if(!name){
+
+        alert(
+            "Service Name দিন"
+        );
+
+        return;
+
     }
+
+
+    const id =
+        "service_" +
+        Date.now();
+
+
+    function createService(image){
+
+        db.services.push({
+
+            id:id,
+
+            name:name,
+
+            icon:icon,
+
+            image:image || "",
+
+            type:type,
+
+            active:true,
+
+            description:description
+
+        });
+
+
+        saveData();
+
+        render();
+
+    }
+
+
+    if(
+        fileInput.files &&
+        fileInput.files[0]
+    ){
+
+        const file =
+            fileInput.files[0];
+
+
+        if(
+            file.size >
+            2 * 1024 * 1024
+        ){
+
+            alert(
+                "Image সর্বোচ্চ 2MB হতে হবে।"
+            );
+
+            return;
+
+        }
+
+
+        const reader =
+            new FileReader();
+
+
+        reader.onload =
+            e =>
+                createService(
+                    e.target.result
+                );
+
+
+        reader.readAsDataURL(file);
+
+    }
+
+    else{
+
+        createService("");
+
+    }
+
 }
+
 
 function editService(id){
-    const s = db.services.find(x => x.id === id);
-    if(!s) return;
-    const name = prompt("Service Name:", s.name);
-    if(name === null) return;
-    const icon = prompt("Icon / Emoji:", s.icon || "🛍️");
-    if(icon === null) return;
-    const description = prompt("Description:", s.description || "");
-    if(description === null) return;
 
-    s.name = name.trim();
-    s.icon = icon.trim() || "🛍️";
-    s.description = description.trim();
+    const s =
+        db.services.find(
+            x =>
+                x.id === id
+        );
 
-    const changeImg = confirm("গ্যালারি থেকে নতুন ছবি আপলোড করতে চান?");
-    if(changeImg){
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept = "image/*";
-        input.onchange = e => {
-            const file = e.target.files[0];
-            if(file){
-                const reader = new FileReader();
-                reader.onload = event => {
-                    s.image = event.target.result;
-                    saveData();
-                    render();
-                };
-                reader.readAsDataURL(file);
-            }
-        };
-        input.click();
-    } else {
-        saveData();
-        render();
-    }
+
+    if(!s)
+        return;
+
+
+    const name =
+        prompt(
+            "Service Name:",
+            s.name
+        );
+
+
+    if(name === null)
+        return;
+
+
+    const icon =
+        prompt(
+            "Icon / Emoji:",
+            s.icon || "🛍️"
+        );
+
+
+    if(icon === null)
+        return;
+
+
+    const type =
+        prompt(
+            "Service Type:",
+            s.type || "other"
+        );
+
+
+    if(type === null)
+        return;
+
+
+    const description =
+        prompt(
+            "Description:",
+            s.description || ""
+        );
+
+
+    if(description === null)
+        return;
+
+
+    s.name =
+        name.trim();
+
+
+    s.icon =
+        icon.trim()
+        ||
+        "🛍️";
+
+
+    s.type =
+        type.trim()
+        ||
+        "other";
+
+
+    s.description =
+        description.trim();
+
+
+    saveData();
+
+    render();
+
 }
+
+
+function changeServiceImage(id){
+
+    const s =
+        db.services.find(
+            x =>
+                x.id === id
+        );
+
+
+    if(!s)
+        return;
+
+
+    const input =
+        document.createElement(
+            "input"
+        );
+
+
+    input.type = "file";
+
+    input.accept = "image/*";
+
+
+    input.onchange =
+        e => {
+
+            const file =
+                e.target.files[0];
+
+
+            if(!file)
+                return;
+
+
+            if(
+                file.size >
+                2 * 1024 * 1024
+            ){
+
+                alert(
+                    "Image সর্বোচ্চ 2MB হতে হবে।"
+                );
+
+                return;
+
+            }
+
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload =
+                event => {
+
+                    s.image =
+                        event.target.result;
+
+                    saveData();
+
+                    render();
+
+                };
+
+
+            reader.readAsDataURL(file);
+
+        };
+
+
+    input.click();
+
+}
+
 
 function toggleService(id){
-    const s = db.services.find(x => x.id === id);
-    if(!s) return;
-    s.active = s.active === false;
+
+    const s =
+        db.services.find(
+            x =>
+                x.id === id
+        );
+
+
+    if(!s)
+        return;
+
+
+    s.active =
+        s.active === false;
+
+
     saveData();
+
     render();
+
 }
+
 
 function deleteService(id){
-    if(!confirm("এই Service এবং এর Product মুছে ফেলবেন?")) return;
-    db.services = db.services.filter(s => s.id !== id);
-    db.products = db.products.filter(p => p.serviceId !== id);
+
+    if(
+        !confirm(
+            "এই Service এবং এর Product মুছে ফেলবেন?"
+        )
+    )
+        return;
+
+
+    db.services =
+        db.services.filter(
+            s =>
+                s.id !== id
+        );
+
+
+    db.products =
+        db.products.filter(
+            p =>
+                p.serviceId !== id
+        );
+
+
+    if(
+        db.selectedService === id
+    ){
+
+        db.selectedService =
+            db.services[0]
+            ?
+            db.services[0].id
+            :
+            "";
+
+    }
+
+
     saveData();
+
     render();
+
 }
+
+
+/* =========================================================
+   PRODUCT ADMIN
+========================================================= */
 
 function addProduct(){
-    const name = document.getElementById("product-name").value.trim();
-    const price = Number(document.getElementById("product-price").value);
-    const serviceId = document.getElementById("product-service").value;
-    const inputType = document.getElementById("product-input").value;
-    const category = document.getElementById("product-category").value.trim();
-    const description = document.getElementById("product-description").value.trim();
-    const rules = document.getElementById("product-rules").value.trim();
 
-    if(!name || !price || !serviceId){ alert("Name, Price এবং Service দিন"); return; }
+    const name =
+        document.getElementById(
+            "product-name"
+        ).value.trim();
+
+
+    const price =
+        Number(
+            document.getElementById(
+                "product-price"
+            ).value
+        );
+
+
+    const serviceId =
+        document.getElementById(
+            "product-service"
+        ).value;
+
+
+    const inputType =
+        document.getElementById(
+            "product-input"
+        ).value;
+
+
+    const category =
+        document.getElementById(
+            "product-category"
+        ).value.trim();
+
+
+    const description =
+        document.getElementById(
+            "product-description"
+        ).value.trim();
+
+
+    const rules =
+        document.getElementById(
+            "product-rules"
+        ).value.trim();
+
+
+    if(
+        !name ||
+        !price ||
+        !serviceId
+    ){
+
+        alert(
+            "Name, Price এবং Service দিন"
+        );
+
+        return;
+
+    }
+
 
     db.products.push({
-        id: Date.now(),
-        serviceId,
-        name,
-        price,
-        category: category || "general",
-        active: true,
-        inputType,
-        description,
-        rules
+
+        id:Date.now(),
+
+        serviceId:serviceId,
+
+        name:name,
+
+        price:price,
+
+        category:
+            category ||
+            "general",
+
+        active:true,
+
+        inputType:inputType,
+
+        description:description,
+
+        rules:rules
+
     });
+
+
     saveData();
+
     render();
+
 }
+
 
 function editProduct(id){
-    const p = db.products.find(x => Number(x.id) === Number(id));
-    if(!p) return;
-    const name = prompt("Product Name:", p.name);
-    if(name === null) return;
-    const price = prompt("Price:", p.price);
-    if(price === null) return;
 
-    p.name = name.trim();
-    p.price = Number(price) || p.price;
+    const p =
+        db.products.find(
+            x =>
+                Number(x.id) ===
+                Number(id)
+        );
+
+
+    if(!p)
+        return;
+
+
+    const name =
+        prompt(
+            "Product Name:",
+            p.name
+        );
+
+
+    if(name === null)
+        return;
+
+
+    const price =
+        prompt(
+            "Price:",
+            p.price
+        );
+
+
+    if(price === null)
+        return;
+
+
+    const description =
+        prompt(
+            "Description:",
+            p.description || ""
+        );
+
+
+    if(description === null)
+        return;
+
+
+    const rules =
+        prompt(
+            "Rules:",
+            p.rules || ""
+        );
+
+
+    if(rules === null)
+        return;
+
+
+    p.name =
+        name.trim();
+
+
+    p.price =
+        Number(price) ||
+        p.price;
+
+
+    p.description =
+        description.trim();
+
+
+    p.rules =
+        rules.trim();
+
+
     saveData();
+
     render();
+
 }
+
 
 function toggleProduct(id){
-    const p = db.products.find(x => Number(x.id) === Number(id));
-    if(!p) return;
-    p.active = p.active === false;
+
+    const p =
+        db.products.find(
+            x =>
+                Number(x.id) ===
+                Number(id)
+        );
+
+
+    if(!p)
+        return;
+
+
+    p.active =
+        p.active === false;
+
+
     saveData();
+
     render();
+
 }
+
 
 function deleteProduct(id){
-    if(!confirm("Product টি Delete করবেন?")) return;
-    db.products = db.products.filter(p => Number(p.id) !== Number(id));
+
+    if(
+        !confirm(
+            "Product টি Delete করবেন?"
+        )
+    )
+        return;
+
+
+    db.products =
+        db.products.filter(
+            p =>
+                Number(p.id) !==
+                Number(id)
+        );
+
+
     saveData();
+
     render();
+
 }
 
-function setOrderStatus(id, status){
-    const order = db.orders.find(o => Number(o.id) === Number(id));
-    if(!order) return;
-    order.status = status;
 
-    if(status === "Cancelled" && order.balanceRefunded !== true){
-        const user = db.users.find(u => Number(u.id) === Number(order.userId));
+/* =========================================================
+   ORDER ADMIN ACTIONS
+========================================================= */
+
+function setOrderStatus(id,status){
+
+    const order =
+        db.orders.find(
+            o =>
+                Number(o.id) ===
+                Number(id)
+        );
+
+
+    if(!order)
+        return;
+
+
+    order.status =
+        status;
+
+
+    if(
+        status === "Cancelled"
+        &&
+        order.balanceRefunded !== true
+    ){
+
+        const user =
+            db.users.find(
+                u =>
+                    Number(u.id) ===
+                    Number(order.userId)
+            );
+
+
         if(user){
-            user.balance = Number(user.balance || 0) + Number(order.total || 0);
-            user.totalSpend = Math.max(0, Number(user.totalSpend || 0) - Number(order.total || 0));
+
+            user.balance =
+                Number(
+                    user.balance || 0
+                )
+                +
+                Number(
+                    order.total || 0
+                );
+
+
+            user.totalSpend =
+                Math.max(
+                    0,
+                    Number(
+                        user.totalSpend || 0
+                    )
+                    -
+                    Number(
+                        order.total || 0
+                    )
+                );
+
         }
-        order.balanceRefunded = true;
+
+
+        order.balanceRefunded =
+            true;
+
     }
+
+
     saveData();
+
     render();
+
 }
+
+
+/* =========================================================
+   DEPOSIT ADMIN ACTIONS
+========================================================= */
 
 function approveDeposit(id){
-    const d = db.deposits.find(x => Number(x.id) === Number(id));
-    if(!d || d.status !== "Pending") return;
-    const user = db.users.find(u => Number(u.id) === Number(d.userId));
-    if(!user){ alert("User পাওয়া যায়নি"); return; }
 
-    user.balance = Number(user.balance || 0) + Number(d.amount || 0);
-    d.status = "Approved";
+    const d =
+        db.deposits.find(
+            x =>
+                Number(x.id) ===
+                Number(id)
+        );
+
+
+    if(
+        !d ||
+        d.status !== "Pending"
+    )
+        return;
+
+
+    const user =
+        db.users.find(
+            u =>
+                Number(u.id) ===
+                Number(d.userId)
+        );
+
+
+    if(!user){
+
+        alert(
+            "User পাওয়া যায়নি"
+        );
+
+        return;
+
+    }
+
+
+    user.balance =
+        Number(
+            user.balance || 0
+        )
+        +
+        Number(
+            d.amount || 0
+        );
+
+
+    d.status =
+        "Approved";
+
+
     saveData();
+
     render();
+
 }
+
 
 function cancelDeposit(id){
-    const d = db.deposits.find(x => Number(x.id) === Number(id));
-    if(!d) return;
-    d.status = "Cancelled";
+
+    const d =
+        db.deposits.find(
+            x =>
+                Number(x.id) ===
+                Number(id)
+        );
+
+
+    if(!d)
+        return;
+
+
+    d.status =
+        "Cancelled";
+
+
     saveData();
+
     render();
+
 }
+
+
+/* =========================================================
+   CUSTOMER BALANCE
+========================================================= */
 
 function addBalancePrompt(userId){
-    const amount = prompt("কত টাকা Balance যোগ করবেন?");
-    if(amount === null) return;
-    const value = Number(amount);
-    if(!value || value <= 0){ alert("সঠিক Amount দিন"); return; }
 
-    const user = db.users.find(u => Number(u.id) === Number(userId));
-    if(!user) return;
-    user.balance = Number(user.balance || 0) + value;
+    const amount =
+        prompt(
+            "কত টাকা Balance যোগ করবেন?"
+        );
+
+
+    if(amount === null)
+        return;
+
+
+    const value =
+        Number(amount);
+
+
+    if(
+        !value ||
+        value <= 0
+    ){
+
+        alert(
+            "সঠিক Amount দিন"
+        );
+
+        return;
+
+    }
+
+
+    const user =
+        db.users.find(
+            u =>
+                Number(u.id) ===
+                Number(userId)
+        );
+
+
+    if(!user)
+        return;
+
+
+    user.balance =
+        Number(
+            user.balance || 0
+        )
+        +
+        value;
+
+
     saveData();
+
     render();
+
 }
+
+
+/* =========================================================
+   SETTINGS
+========================================================= */
 
 function saveSettings(){
-    db.settings.shopName = document.getElementById("set-name").value.trim();
-    db.settings.paymentNumber = document.getElementById("set-pay").value.trim();
-    db.settings.whatsappNumber = document.getElementById("set-wa").value.trim();
-    db.settings.telegramUsername = document.getElementById("set-tg").value.trim();
-    db.settings.notice = document.getElementById("set-notice").value.trim();
+
+    db.settings.shopName =
+        document.getElementById(
+            "set-name"
+        ).value.trim();
+
+
+    db.settings.paymentNumber =
+        document.getElementById(
+            "set-pay"
+        ).value.trim();
+
+
+    db.settings.whatsappNumber =
+        document.getElementById(
+            "set-wa"
+        ).value.trim();
+
+
+    db.settings.telegramUsername =
+        document.getElementById(
+            "set-tg"
+        ).value.trim();
+
+
+    db.settings.notice =
+        document.getElementById(
+            "set-notice"
+        ).value.trim();
+
+
     saveData();
-    alert("Settings সংরক্ষিত হয়েছে!");
+
+    alert(
+        "Settings সংরক্ষিত হয়েছে!"
+    );
+
     render();
+
 }
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
 
 function getServiceName(id){
-    const s = db.services.find(x => x.id === id);
-    return s ? s.name : "";
+
+    const s =
+        db.services.find(
+            x =>
+                x.id === id
+        );
+
+
+    return s
+        ?
+        s.name
+        :
+        "";
+
 }
+
 
 function cleanNumber(number){
-    return String(number || "").replace(/\D/g,"");
+
+    return String(
+        number || ""
+    ).replace(
+        /\D/g,
+        ""
+    );
+
 }
+
 
 function escapeHTML(value){
-    return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;");
+
+    return String(
+        value ?? ""
+    )
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+    .replace(
+        /</g,
+        "&lt;"
+    )
+    .replace(
+        />/g,
+        "&gt;"
+    )
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+    .replace(
+        /'/g,
+        "&#039;"
+    );
+
 }
 
+
 function escapeAttr(value){
+
     return escapeHTML(value);
+
 }
+
+
+/* =========================================================
+   INITIAL RENDER
+========================================================= */
 
 render();
 
